@@ -1,0 +1,182 @@
+/* ========================================
+   Fighting Game Engine — Game UI Styles
+   ======================================== */
+
+/* --- Game Container --- */
+.game-container {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  background: #000;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px solid #333;
+  border-radius: 4px;
+}
+
+/* --- Canvas --- */
+.game-canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+/* --- Loading State --- */
+.game-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  color: #aaa;
+  font-family: monospace;
+  gap: 16px;
+}
+
+.game-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #333;
+  border-top-color: #0af;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Error State --- */
+.game-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1a0000;
+  color: #f66;
+  font-family: monospace;
+  padding: 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.game-error__hint {
+  font-size: 12px;
+  color: #999;
+}
+
+.game-error code {
+  background: #333;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #0f0;
+}
+
+/* --- Touch Controls --- */
+.touch-controls {
+  display: none; /* Hidden by default; shown on touch devices */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  padding: 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@media (pointer: coarse) {
+  .touch-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+}
+
+/* --- D-Pad --- */
+.touch-dpad {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  pointer-events: auto;
+}
+
+.touch-dpad__btn {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ddd;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.touch-dpad__btn:active,
+.touch-dpad__btn:active {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #0af;
+}
+
+.touch-dpad__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border: 2px solid #333;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* --- Action Buttons --- */
+.touch-actions {
+  position: relative;
+  width: 140px;
+  height: 120px;
+  pointer-events: auto;
+}
+
+.touch-actions__btn {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #555;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ddd;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.touch-actions__btn:active,
+.touch-actions__btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #f80;
+  transform: translate(-50%, -50%) scale(0.92);
+}
