@@ -52,6 +52,7 @@ LINK_FLAGS="$LINK_FLAGS -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=1"
 LINK_FLAGS="$LINK_FLAGS -s CASE_INSENSITIVE_FS=1 -s FORCE_FILESYSTEM=1"
 LINK_FLAGS="$LINK_FLAGS -s TOTAL_MEMORY=402653184"
 LINK_FLAGS="$LINK_FLAGS -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"
+LINK_FLAGS="$LINK_FLAGS -s EXPORTED_FUNCTIONS=[_setExternalPlayerInput,_disableExternalInput,_isExternalInputActive,_main]"
 LINK_FLAGS="$LINK_FLAGS -s SDL2_IMAGE_FORMATS='[\"png\"]'"
 
 # =============================================================================
