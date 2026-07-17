@@ -11,12 +11,16 @@ PRISM_DIR="$ENGINE_DIR/addons/prism"
 BUILD_DIR="$PROJECT_ROOT/build/wasm"
 OUTPUT_DIR="$PROJECT_ROOT/public/game"
 
-source /home/z/emsdk/emsdk_env.sh 2>/dev/null || true
+export EMSDK_QUIET=1
+source /home/z/emsdk/emsdk_env.sh 2>&1 || true
 
 if ! command -v emcc &>/dev/null; then
     echo "ERROR: emcc not found."
     exit 1
 fi
+
+# Redirect all output to a log file
+exec > >(tee -a /tmp/wasm-build.log) 2>&1
 
 echo "=== Emscripten $(emcc --version | head -1) ==="
 
@@ -84,7 +88,9 @@ for f in \
     windows/texture_win.cpp \
     windows/thread_win.cpp \
     windows/screeneffect_win.cpp \
-    windows/framerateselect_win.cpp; do
+    windows/framerateselect_win.cpp \
+    windows/saveload_win.cpp \
+    windows/romdisk_win.cpp; do
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
         echo "    $f (platform)"
@@ -93,27 +99,18 @@ for f in \
     fi
 done
 
-# Web sound replacements (SDL_mixer)
-for f in web/sound_web.cpp web/soundeffect_web.cpp; do
+# Web replacements (SDL_mixer audio, netplay stubs, threading, zstd)
+for f in \
+    web/sound_web.cpp \
+    web/soundeffect_web.cpp \
+    web/netplay_web.cpp \
+    web/thread_web.cpp \
+    web/zstd_stub.cpp; do
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
-        echo "    $f (web audio)"
+        echo "    $f (web)"
         em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
         WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
-    fi
-done
-
-# Web-specific Dolmexica files
-for f in \
-    web/netplay_web.cpp \
-    web/run.cpp \
-    web/thread_web.cpp \
-    web/windowfocusscreen_web.cpp; do
-    if [ -f "$ENGINE_DIR/$f" ]; then
-        base=$(basename "$f" .cpp)
-        echo "    $f (dolmexica web)"
-        em++ $DOLMEXICA_FLAGS -c "$ENGINE_DIR/$f" -o "$BUILD_DIR/dolmexica_${base}.o" 2>&1 | grep -i "error" || true
-        WIN_FILES="$WIN_FILES $BUILD_DIR/dolmexica_${base}.o"
     fi
 done
 
