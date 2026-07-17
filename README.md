@@ -86,10 +86,12 @@ python3 tools/validate-mugen.py engine/DolmexicaInfinite/chars/KnightmareSuperma
 
 Only small characters are bundled to keep first-load under ~10MB (essential for Bangladesh mobile data).
 
-| Character | Size | Source |
-|-----------|------|--------|
-| Songoku | ~4 MB | bundled with engine |
-| TBD (small character) | <5 MB | user-provided |
+| Character | Size | Author | Source |
+|-----------|------|--------|--------|
+| Songoku | ~4 MB | bundled with engine | Dolmexica Infinite |
+| Vegeta | ~4.3 MB | CHOUJIN (2011) | tmpfiles.org |
+
+**Note:** `scripts/build-wasm.sh` currently preloads the entire `chars/` directory. FIX-3 (Phase 1) modifies it to selectively preload only these two characters. Large characters (KnightmareSuperman 69MB, Nightwing 30MB) stay in the directory for local dev testing but are excluded from the bundle.
 
 ### Available via R2 on-demand streaming (Phase 1.5+)
 

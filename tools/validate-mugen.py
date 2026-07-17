@@ -48,17 +48,22 @@ def parse_def(filepath: str) -> dict:
             else:
                 continue
 
+            # Strip inline comments (MUGEN uses ; for comments)
+            if ";" in value:
+                value = value.split(";", 1)[0].strip().strip('"')
+
             if current_section == "info" and key == "name":
                 info["name"] = value
-            elif key == "spr":
+            elif key in ("spr", "sprite"):
                 info["sff"] = value
-            elif key == "snd":
+            elif key in ("snd", "sound"):
                 info["snd"] = value
-            elif key == "anim":
+            elif key in ("anim", "air"):
                 info["air"] = value
             elif key == "cmd":
                 info["cmd"] = value
-            elif key == "cns" and current_section in ("state", ""):
+            elif key in ("cns", "st", "stcommon") or (key.startswith("st") and key[2:].isdigit()):
+                # MUGEN [Files] section uses st, st1, st2, ..., st9, stcommon
                 info["cns_files"].append(value)
 
     return info
@@ -78,9 +83,15 @@ def validate_sff(filepath: str) -> tuple[bool, str]:
         if ".." in full_path.split(os.sep):
             return False, f"Path traversal detected in SFF path: {filepath}"
 
-        # SFF v2: "2DTP" or similar
+        # SFF v2: starts with "Elecbyte" signature (8 bytes)
+        if header[:8] == b"Elecbyte":
+            # SFF v2 header: bytes 8-10 = verLo (3 bytes LE), byte 11 = verHi
+            ver_lo = header[8] | (header[9] << 8) | (header[10] << 16)
+            ver_hi = header[11]
+            return True, f"SFF v2 format detected (ver {ver_hi}.{ver_lo})"
+        # SFF v2 alternate: "2DTP" (rare, used by some tools)
         if header[:4] == b"2DTP":
-            return True, "SFF v2 format detected"
+            return True, "SFF v2 (2DTP) format detected"
         # SFF v1: signature word + version
         sig, ver_lo, ver_hi = struct.unpack("<HHB", header[:5])
         if sig == 0x0E84 and ver_lo == 1:
@@ -130,7 +141,7 @@ def validate(def_path: str) -> tuple[bool, list[str]]:
 
     # 4. Check SFF
     if not info["sff"]:
-        errors.append("No 'spr' (SFF) file specified in DEF")
+        errors.append("No 'spr'/'sprite' (SFF) file specified in DEF")
     else:
         sff_path = os.path.join(info["basedir"], info["sff"])
         if not os.path.isfile(sff_path):
@@ -144,15 +155,23 @@ def validate(def_path: str) -> tuple[bool, list[str]]:
 
     # 5. Check SND
     if not info["snd"]:
-        warnings.append("No 'snd' file specified (character may have no sound)")
+        warnings.append("No 'snd'/'sound' file specified (character may have no sound)")
     else:
         snd_path = os.path.join(info["basedir"], info["snd"])
         if not os.path.isfile(snd_path):
             warnings.append(f"SND file not found: {snd_path}")
+        else:
+            print(f"  ✓ SND: {os.path.getsize(snd_path) / 1024 / 1024:.1f} MB")
 
     # 6. Check AIR
     if not info["air"]:
-        warnings.append("No 'anim' (AIR) file specified")
+        warnings.append("No 'anim'/'air' (AIR) file specified")
+    else:
+        air_path = os.path.join(info["basedir"], info["air"])
+        if not os.path.isfile(air_path):
+            warnings.append(f"AIR file not found: {air_path}")
+        else:
+            print(f"  ✓ AIR: {os.path.getsize(air_path) / 1024:.1f} KB")
 
     # 7. Size check
     total = get_total_size(info["basedir"])

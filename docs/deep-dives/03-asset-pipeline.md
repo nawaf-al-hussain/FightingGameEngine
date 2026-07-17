@@ -37,12 +37,14 @@ MUGEN characters are large (4–70MB each). Bundling all characters into the WAS
 
 `scripts/build-wasm.sh` uses Emscripten `file_packager` with `--preload` to embed selected characters into `game.data`. **Only small characters are preloaded** — keeps total first-load under ~10MB.
 
-Current preload list (after FIX-3):
+Current preload list (after FIX-3, **pending implementation**):
 ```
 chars/Songoku/                   # ~4MB
-chars/<TBD-small-character>/     # <5MB, user-provided
+chars/Vegeta/                    # ~4.3MB (CHOUJIN, 2011)
 stages/<default-stage>/          # ~1MB
 ```
+
+FIX-3 implementation note: `scripts/build-wasm.sh` currently preloads the entire `chars/` directory. Modify it to accept a `BUNDLE_CHARS` env var (default `"Songoku Vegeta"`) and only preload those subdirectories.
 
 Removed from preload (now R2-only):
 ```
@@ -83,7 +85,7 @@ When a player selects a non-bundled character in the lobby, the frontend:
 | Character | SFF | SND | CNS/AIR/CMD | Total | Bundle? |
 |-----------|-----|-----|-------------|-------|---------|
 | Songoku | 2MB | 2MB | 0.1MB | ~4MB | ✅ Yes (Phase 1) |
-| TBD (user-provided) | ? | ? | ? | <5MB | ✅ Yes (Phase 1) |
+| Vegeta (CHOUJIN 2011) | 1.8MB | 2.2MB | 0.3MB | ~4.3MB | ✅ Yes (Phase 1) |
 | Knightmare Superman | 41MB | 26MB | 1.5MB | ~69MB | ❌ R2 only |
 | Nightwing | 20MB | 9.5MB | 0.5MB | ~30MB | ❌ R2 only |
 
@@ -94,7 +96,7 @@ When a player selects a non-bundled character in the lobby, the frontend:
 | `game.wasm` | ~3.1MB |
 | `game.js` | ~207KB |
 | Songoku | ~4MB |
-| TBD small char | <5MB |
+| Vegeta | ~4.3MB |
 | Default stage | ~1MB |
 | **Total first-load** | **~13MB** |
 
