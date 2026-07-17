@@ -1,2 +1,35 @@
-skills/
+# Dependencies
 node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# WASM build artifacts (built locally, not committed)
+public/game/*.wasm
+public/game/*.data
+public/game/*.js
+public/game/index.html
+
+# Emscripten SDK
+emsdk/
+
+# Engine source (large C++ repo, added separately)
+# engine/DolmexicaInfinite/.git/
+
+# Uploaded/temp files
+upload/
+skills/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
