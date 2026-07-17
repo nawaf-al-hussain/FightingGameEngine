@@ -72,6 +72,10 @@ export function keyboardToInputString(activeKeys: Set<string>): string {
  * of a setTimeout-based race. Pre-configures window.Module with a callback
  * before loading game.js, so Emscripten uses our config when it boots.
  *
+ * Also sets locateFile() so Emscripten fetches game.wasm and game.data from
+ * /game/ regardless of the current page URL. Without this, the loader uses
+ * page-relative paths and 404s when the page isn't at the site root.
+ *
  * Usage: call this BEFORE dynamically loading game.js script tag.
  * Returns a Promise that resolves once the WASM runtime is fully initialized.
  */
@@ -84,14 +88,13 @@ export function loadGameEngine(): Promise<GameInstance> {
       ));
     }, 30000);
 
-    // Configure Module with onRuntimeInitialized callback BEFORE game.js loads.
-    // Emscripten will pick up window.Module if it exists, then override these
-    // fields with its own internals while preserving our callback.
     const w = window as unknown as Record<string, unknown>;
     const existingConfig = (w.Module as Record<string, unknown> | undefined) || {};
 
     w.Module = {
       ...existingConfig,
+      // Tell Emscripten where to find game.wasm and game.data — always /game/
+      locateFile: (path: string) => "/game/" + path,
       onRuntimeInitialized: () => {
         clearTimeout(timeout);
         const module = w.Module as GameInstance["Module"];

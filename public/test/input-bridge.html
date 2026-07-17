@@ -152,12 +152,20 @@
     log('Initializing test harness', 'info');
 
     // ---------- FIX-2 pattern: configure Module BEFORE loading script ----------
+    // locateFile tells Emscripten where to find game.wasm and game.data —
+    // without it, the loader fetches them relative to the HTML page, which
+    // breaks when the page is in /test/ but assets are in /game/.
     const runtimeReady = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('WASM runtime init timeout after 30s'));
       }, 30000);
 
       window.Module = {
+        locateFile: function (path) {
+          // All Emscripten asset fetches (game.wasm, game.data) go through here.
+          // Redirect them to /game/ — they're served from public/game/.
+          return '/game/' + path;
+        },
         onRuntimeInitialized: function () {
           clearTimeout(timeout);
           log('WASM runtime initialized', 'ok');
@@ -169,8 +177,6 @@
           reject(new Error('WASM aborted: ' + reason));
         },
         canvas: (() => {
-          // Emscripten will attach its canvas; we don't need to provide one
-          // but we set this in case the build expects it
           const c = document.createElement('canvas');
           c.id = 'game-canvas';
           c.width = 640; c.height = 480;
