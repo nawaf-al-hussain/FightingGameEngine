@@ -212,8 +212,9 @@ export function connectRelayToGame(
 ): () => void {
   const unsub = relay.on("remote_input", (msg) => {
     const remoteMsg = msg as RemoteInputMsg;
-    // The remote player is the other slot
-    injectFn(remoteMsg.from_slot, remoteMsg.data);
+    // FIX-1: Relay protocol uses 1-indexed slots (1, 2), but WASM API is
+    // 0-indexed (0 = P1, 1 = P2). Translate at the JS↔relay boundary.
+    injectFn(remoteMsg.from_slot - 1, remoteMsg.data);
   });
 
   const unsubStart = relay.on("game_start", (msg) => {

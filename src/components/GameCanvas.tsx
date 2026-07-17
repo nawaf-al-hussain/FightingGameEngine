@@ -18,33 +18,22 @@ export default function GameCanvas() {
 
   useEffect(() => {
     let destroyed = false;
+    let gamePromise: Promise<GameInstance> | null = null;
 
     async function init() {
       try {
         setStatus("loading");
 
-        // Dynamically load the Emscripten game.js script
+        // FIX-2: Set up the onRuntimeInitialized callback BEFORE loading
+        // game.js. Emscripten picks up window.Module if set before the script
+        // boots, and calls onRuntimeInitialized when the WASM runtime is ready.
+        // This replaces the old setTimeout(100) race condition that failed on
+        // mobile browsers where init takes seconds.
+        gamePromise = loadGameEngine();
+
         const script = document.createElement("script");
         script.src = "/game/game.js";
         script.async = true;
-
-        script.onload = async () => {
-          if (destroyed) return;
-
-          // Wait a tick for Module to initialize
-          await new Promise((r) => setTimeout(r, 100));
-
-          try {
-            const game = await loadGameEngine();
-            gameRef.current = game;
-            if (!destroyed) setStatus("ready");
-          } catch (e) {
-            if (!destroyed) {
-              setError((e as Error).message);
-              setStatus("error");
-            }
-          }
-        };
 
         script.onerror = () => {
           if (!destroyed) {
@@ -54,6 +43,18 @@ export default function GameCanvas() {
         };
 
         document.head.appendChild(script);
+
+        try {
+          const game = await gamePromise;
+          if (destroyed) return;
+          gameRef.current = game;
+          setStatus("ready");
+        } catch (e) {
+          if (!destroyed) {
+            setError((e as Error).message);
+            setStatus("error");
+          }
+        }
       } catch (e) {
         if (!destroyed) {
           setError((e as Error).message);

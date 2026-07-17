@@ -72,11 +72,16 @@ PRISM_OBJS=""
 for f in $PRISM_SRC; do
     base=$(basename "$f" .cpp)
     echo "    $f"
-    em++ $PRISM_FLAGS -c "$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+    if ! em++ $PRISM_FLAGS -c "$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
+        echo "  ERROR compiling $f — see above"
+        exit 1
+    fi
     PRISM_OBJS="$PRISM_OBJS $BUILD_DIR/prism_${base}.o"
 done
 
 # Windows platform files (SDL-based, cross-platform)
+# NOTE: thread_win.cpp is EXCLUDED — it includes Windows.h and is replaced
+# by web/thread_web.cpp (synchronous, no threads). See Phase 0 notes.
 WIN_FILES=""
 for f in \
     windows/drawing_win.cpp \
@@ -87,7 +92,6 @@ for f in \
     windows/memoryhandler_win.cpp \
     windows/log_win.cpp \
     windows/texture_win.cpp \
-    windows/thread_win.cpp \
     windows/screeneffect_win.cpp \
     windows/framerateselect_win.cpp \
     windows/saveload_win.cpp \
@@ -95,7 +99,10 @@ for f in \
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
         echo "    $f (platform)"
-        em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+        if ! em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
+            echo "  ERROR compiling $f — see above"
+            exit 1
+        fi
         WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
     fi
 done
@@ -110,7 +117,10 @@ for f in \
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
         echo "    $f (web)"
-        em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+        if ! em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
+            echo "  ERROR compiling $f — see above"
+            exit 1
+        fi
         WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
     fi
 done
@@ -140,7 +150,10 @@ for f in $DOLMEXICA_SRC; do
         continue
     fi
     echo "    $f"
-    em++ $DOLMEXICA_FLAGS -c "$f" -o "$BUILD_DIR/dolmexica_${base}.o" 2>&1 | grep -i "error" || true
+    if ! em++ $DOLMEXICA_FLAGS -c "$f" -o "$BUILD_DIR/dolmexica_${base}.o" 2>&1; then
+        echo "  ERROR compiling $f — see above"
+        exit 1
+    fi
     DOLMEXICA_OBJS="$DOLMEXICA_OBJS $BUILD_DIR/dolmexica_${base}.o"
 done
 
@@ -168,15 +181,36 @@ echo "=== [4/4] Packaging assets ==="
 CHARS_DIR="$ENGINE_DIR/chars"
 DATA_DIR="$ENGINE_DIR/data"
 
+# FIX-3: Selective preload. Only bundle small characters by default.
+# Override with BUNDLE_CHARS="Songoku Vegeta KnightmareSuperman" env var.
+# Default bundle: Songoku (~4MB) + Vegeta (~4.3MB) keeps first-load under ~13MB.
+BUNDLE_CHARS="${BUNDLE_CHARS:-Songoku Vegeta}"
+
 PRELOAD_FLAGS=""
 if [ -d "$DATA_DIR" ] && [ "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
     PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $DATA_DIR@/data"
     echo "  Including data/ directory"
 fi
 
-if [ -d "$CHARS_DIR" ] && [ "$(ls -A "$CHARS_DIR" 2>/dev/null)" ]; then
-    PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $CHARS_DIR@/chars"
-    echo "  Including chars/ directory"
+# Per-character selective preload (FIX-3)
+if [ -d "$CHARS_DIR" ]; then
+    for char in $BUNDLE_CHARS; do
+        char_dir="$CHARS_DIR/$char"
+        if [ -d "$char_dir" ]; then
+            PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $char_dir@/chars/$char"
+            size=$(du -sh "$char_dir" | cut -f1)
+            echo "  Including chars/$char ($size)"
+        else
+            echo "  WARNING: chars/$char not found (skipping)"
+        fi
+    done
+fi
+
+# Also include any stages directory if present
+STAGES_DIR="$ENGINE_DIR/stages"
+if [ -d "$STAGES_DIR" ] && [ "$(ls -A "$STAGES_DIR" 2>/dev/null)" ]; then
+    PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $STAGES_DIR@/stages"
+    echo "  Including stages/ directory"
 fi
 
 if [ -n "$PRELOAD_FLAGS" ]; then

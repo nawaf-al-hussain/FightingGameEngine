@@ -16,6 +16,9 @@ public/game/*.data
 public/game/*.js
 public/game/index.html
 
+# Intermediate build directory
+build/
+
 # Emscripten SDK
 emsdk/
 

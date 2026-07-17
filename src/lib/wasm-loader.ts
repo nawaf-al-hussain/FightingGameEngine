@@ -24,7 +24,9 @@ export interface GameInstance {
   };
 }
 
-/** Mapping from browser KeyboardEvent.code to MUGEN input characters */
+/** Mapping from browser KeyboardEvent.code to MUGEN input characters.
+ *  Note: Start (Q/Enter) is intentionally NOT in this map — it's an event,
+ *  not a held state. See use-game-input.ts for Start handling (FIX-4). */
 const KEY_MAP: Record<string, string> = {
   ArrowUp: "U",
   ArrowDown: "D",
@@ -36,26 +38,27 @@ const KEY_MAP: Record<string, string> = {
   KeyA: "x", // Light kick
   KeyS: "y", // Medium kick
   KeyD: "z", // Heavy kick
-  KeyQ: "s", // Start
-  Enter: "s", // Start (alternative)
 };
+
+/** Key codes that trigger the MUGEN Start button (edge-triggered, not held) */
+export const START_KEYS = ["KeyQ", "Enter"];
 
 /**
  * Convert a set of pressed key codes to a MUGEN input string.
  * MUGEN expects characters like "U" (up), "D" (down), "a" (light punch), etc.
  * Multiple simultaneous inputs are concatenated: "Fa" = forward + light punch.
+ *
+ * Note: Start is NOT included — it's an edge-triggered event, not a held state (FIX-4).
  */
 export function keyboardToInputString(activeKeys: Set<string>): string {
   let input = "";
-  // Direction first (U/D/B/F), then actions (a/b/c/x/y/z/s)
+  // Direction first (U/D/B/F), then actions (a/b/c/x/y/z)
   for (const key of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
     if (activeKeys.has(key)) {
       input += KEY_MAP[key];
     }
   }
-  for (const key of [
-    "KeyZ", "KeyX", "KeyC", "KeyA", "KeyS", "KeyD", "KeyQ", "Enter",
-  ]) {
+  for (const key of ["KeyZ", "KeyX", "KeyC", "KeyA", "KeyS", "KeyD"]) {
     if (activeKeys.has(key)) {
       input += KEY_MAP[key];
     }
@@ -65,28 +68,41 @@ export function keyboardToInputString(activeKeys: Set<string>): string {
 
 /**
  * Load the game engine WASM module.
- * The game.js loader script must already be loaded (via <script> tag).
+ * FIX-2: Uses the Emscripten onRuntimeInitialized callback pattern instead
+ * of a setTimeout-based race. Pre-configures window.Module with a callback
+ * before loading game.js, so Emscripten uses our config when it boots.
+ *
+ * Usage: call this BEFORE dynamically loading game.js script tag.
+ * Returns a Promise that resolves once the WASM runtime is fully initialized.
  */
-export async function loadGameEngine(): Promise<GameInstance> {
-  // The Emscripten loader creates a global `Module` or `createModule`.
-  // We expect game.js to have been loaded as a regular script.
-  const createModule = (window as unknown as Record<string, unknown>)
-    .createModule as (() => Promise<unknown>) | undefined;
+export function loadGameEngine(): Promise<GameInstance> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(
+        "WASM runtime initialization timed out after 30 seconds. " +
+        "Check console for errors."
+      ));
+    }, 30000);
 
-  if (typeof createModule === "function") {
-    const mod = (await createModule()) as GameInstance["Module"];
-    return { Module: mod } as GameInstance;
-  }
+    // Configure Module with onRuntimeInitialized callback BEFORE game.js loads.
+    // Emscripten will pick up window.Module if it exists, then override these
+    // fields with its own internals while preserving our callback.
+    const w = window as unknown as Record<string, unknown>;
+    const existingConfig = (w.Module as Record<string, unknown> | undefined) || {};
 
-  // Fallback: Module may already be initialized
-  const existingModule = (window as unknown as Record<string, unknown>).Module;
-  if (existingModule) {
-    return { Module: existingModule as GameInstance["Module"] } as GameInstance;
-  }
-
-  throw new Error(
-    "Game engine not loaded. Ensure public/game/game.js is loaded before calling loadGameEngine()."
-  );
+    w.Module = {
+      ...existingConfig,
+      onRuntimeInitialized: () => {
+        clearTimeout(timeout);
+        const module = w.Module as GameInstance["Module"];
+        if (!module) {
+          reject(new Error("Module not found after runtime init"));
+          return;
+        }
+        resolve({ Module: module } as GameInstance);
+      },
+    };
+  });
 }
 
 /** Inject a remote player's input into the WASM engine.
