@@ -1,0 +1,37 @@
+;====================================================
+;d "CAPCOM FIGHTING ALL-STARS" PROJECT
+; Ddefinition file for Character
+; Versus Series Fighting Style
+; Contains all the filenames needed for the character
+;====================================================
+
+; Player information
+[Info]
+name ="Nightwing-O"
+displayname ="Nightwing"
+versiondate =28,12,2020
+mugenversion =1.0
+author ="Jmaxximus & O Ilusionista"
+pal.defaults =1,2
+
+; Files for the player
+[Files]
+cmd     =!Nightwing.cmd
+cns     =!Nightwing.cns
+st      =!Nightwing.cns
+stcommon =common1.cns
+sprite  =!Nightwing.sff
+anim    =!Nightwing.air
+sound   =!Nightwing.snd
+pal1=ACT/pal1.act
+pal2=ACT/pal2.act
+st1=!Nightwing_special.st
+st2=!Nightwing_hypers.cns
+st3=Extra.st
+st4=state-2.cns
+st5=state-3.cns
+
+
+[Arcade]
+intro.storyboard=
+ending.storyboard=

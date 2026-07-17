@@ -1,0 +1,611 @@
+;================================================================================================
+;================================================================================================
+;                                            HYPER ATTACKS
+;================================================================================================
+;================================================================================================
+;HYPER 1
+[Statedef 3000]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+anim = 3000
+ctrl = 0
+sprpriority = 1
+
+[State 3000, Reset DHC]
+type= varset
+trigger1= var(57)
+trigger1= AnimelemTime(5)<0
+var(57)= 0
+
+[State 1000, Vari�vel de for�a]
+type = VarSet
+trigger1 = !time
+v = 20
+value = 2;ifelse (command = "qcf_z",2,(ifelse(command = "qcf_y",1,0)))
+
+[State 3000, Corner Push]
+type= varset
+trigger1= fvar(5)
+trigger1= 1
+fvar(5)= 0
+
+[State 3000]
+type=SuperPause
+trigger1=!time
+time=45
+anim=s6050
+sound=S2000,0
+pos=32,-66
+movetime=2
+poweradd=-1000
+
+[State 0, Helper]; ====================================calls hyperbg
+type = Helper
+trigger1 =  !time
+helpertype = normal ;player
+name ="Hyper fx"
+ID = 96000
+stateno = 96000
+pos = 0,0
+postype = left    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3000]
+type=PosSet
+trigger1=1
+y=0
+
+[State 3000]
+type=NotHitBy
+Trigger1=animelemtime(4)>=7 && animelemtime(7)<0
+value=SCA
+Time=1
+
+[State 0, PlaySnd]
+type = PlaySnd
+trigger1 = !time
+value = S3001,0
+
+[State 0, Helper]
+type = Helper
+trigger1 = time>8&time%3=0
+helpertype = normal ;player
+name = "batrang" 
+ID = 1005
+stateno = 1008
+pos = 25,-85 + random%50
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+
+[State 3000, 7]
+type = ChangeState
+trigger1 = Time=100
+value = 3001
+ctrl = 0
+
+;================================================================================================
+;HYPER 1 END
+[Statedef 3001]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+anim = 3001
+ctrl = 0
+sprpriority = 1
+
+[State 3000, 7]
+type = ChangeState
+trigger1 = !Animtime
+value = 0
+ctrl = 1
+
+;================================================================================================
+;HYPER 2
+[Statedef 3100]
+type    = S
+movetype= A
+physics = N
+velset = 0,0
+anim = 3100
+ctrl = 0
+sprpriority = 1
+
+[State 3000, Reset DHC]
+type= varset
+trigger1= var(57)
+trigger1= AnimelemTime(5)<0
+var(57)= 0
+
+[State 1000, Vari�vel de for�a]
+type = VarSet
+trigger1 = !time
+v = 20
+value = 2;ifelse (command = "qcf_z",2,(ifelse(command = "qcf_y",1,0)))
+
+[State 3000, Corner Push]
+type= varset
+trigger1= fvar(5)
+trigger1= 1
+fvar(5)= 0
+
+[State 3000]
+type=SuperPause
+trigger1=!time
+time=45
+anim=s6050
+sound=S2000,0
+pos=12,-66
+movetime=2
+poweradd=-1000
+
+[State 0, PlaySnd]
+type = PlaySnd
+trigger1 = !time
+value = S3100,random%2
+channel = 0
+
+
+
+[State 0, Helper]; ====================================calls hyperbg
+type = Helper
+trigger1 =  !time
+helpertype = normal ;player
+name ="Hyper fx"
+ID = 96000
+stateno = 96000
+pos = 0,0
+postype = left    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3000]
+type=PosSet
+trigger1=1
+y=0
+
+[State 3000]
+type=NotHitBy
+Trigger1=animelemtime(4)>=7 && animelemtime(7)<0
+value=SCA
+Time=1
+
+[State 0, VelSet]
+type = VelSet
+trigger1 = AnimElem = 2
+x = 10
+persistent = 0
+
+[State 250]
+type=HitDef
+trigger1=time=0
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=55
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=High
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=4,11
+sparkno = S-1
+sparkxy=var(32):=-36,var(33):=-97
+hitsound=S0,8
+guardsound = S0,10
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 21
+ground.velocity = -6
+air.velocity = -2.2,0
+ground.cornerpush.veloff = 0
+envshake.time = 7
+envshake.ampl = 4
+p1stateno = 3101
+snap = 20,0
+kill=0
+forcestand=1
+getpower=0
+
+[State 250, hitspark heavy]
+type=helper 
+trigger1= hitpausetime=3;;;;;;;;;;;;;;;;;;;;must be 1 tick under pausetime (or at least under)
+trigger1= movehit=1 && numtarget
+helpertype=normal
+stateno=7002
+ID=7002
+name="Blood"
+postype=p2
+pos= (target,const(size.ground.front) + var(32)) * (target,facing) * (-facing), floor(pos y-target,pos y) + var(33)
+facing= ifelse((target,facing = facing), 1, -1)
+ownpal=1
+pausemovetime=65535
+supermovetime=65535
+ignorehitpause=1
+
+[State 0, ChangeState]
+type = ChangeState
+trigger1 = MoveGuarded
+value = 3101
+ctrl = 0
+;anim =
+;ignorehitpause = 
+;persistent = 
+
+
+[State 220, 5]
+type = ChangeState
+trigger1 = Time = 60
+value = 101
+ctrl = 0
+
+;================================================================================================
+;HYPER 2 - Combo
+[Statedef 3101]
+type    = S
+movetype= A
+physics = N
+velset = 3,0
+anim = 3101
+ctrl = 0
+sprpriority = 1
+
+
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 3 || AnimElem = 6 || AnimElem = 13 || AnimElem = 22
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=High
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=3,10
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-90;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,6+random%3
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -3
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,0
+air.hittime = 12
+envshake.time = 10
+envshake.ampl = 7
+kill=0
+forcestand=1
+getpower=0
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 9 || AnimElem = 16 || AnimElem = 19 || AnimElem = 25
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=Low
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=3,10
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-40;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,6+random%3
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -3
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,0
+air.hittime = 12
+envshake.time = 10
+envshake.ampl = 7
+kill=0
+forcestand=1
+getpower=0
+
+[State 250, hitspark heavy]
+type=helper 
+trigger1= hitpausetime=3;;;;;;;;;;;;;;;;;;;;must be 1 tick under pausetime (or at least under)
+trigger1= movehit=1 && numtarget
+helpertype=normal
+stateno=7002
+ID=7002
+name="Blood"
+postype=p2
+pos= (target,const(size.ground.front) + var(32)) * (target,facing) * (-facing), floor(pos y-target,pos y) + var(33)
+facing= ifelse((target,facing = facing), 1, -1)
+ownpal=1
+pausemovetime=65535
+supermovetime=65535
+ignorehitpause=1
+
+[State 0, ChangeState]
+type = ChangeState
+trigger1 = !AnimTime
+value =ifelse(MoveGuarded,105,3102)
+ctrl = MoveGuarded
+
+;================================================================================================
+;HYPER 2 - Capoeira
+[Statedef 3102]
+type    = S
+movetype= A
+physics = N
+velset = 3,0
+anim = 3102
+ctrl = 0
+sprpriority = 1
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 12
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=High
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=3,10
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-90;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,6+random%3
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -3
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,-3
+air.hittime = 12
+envshake.time = 10
+envshake.ampl = 7
+kill=0
+forcestand=1
+getpower=0
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 4 || AnimElem = 8 || AnimElem = 10
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=Low
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=3,10
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-30;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,6+random%3
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -3
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,-3
+air.hittime = 12
+envshake.time = 10
+envshake.ampl = 7
+kill=0
+forcestand=1
+getpower=0
+
+[State 250, hitspark heavy]
+type=helper 
+trigger1= hitpausetime=3;;;;;;;;;;;;;;;;;;;;must be 1 tick under pausetime (or at least under)
+trigger1= movehit=1 && numtarget
+helpertype=normal
+stateno=7002
+ID=7002
+name="Blood"
+postype=p2
+pos= (target,const(size.ground.front) + var(32)) * (target,facing) * (-facing), floor(pos y-target,pos y) + var(33)
+facing= ifelse((target,facing = facing), 1, -1)
+ownpal=1
+pausemovetime=65535
+supermovetime=65535
+ignorehitpause=1
+
+[State 220, 5]
+type = ChangeState
+trigger1 = Time = 56
+value = 3103
+ctrl = 0
+
+;================================================================================================
+;HYPER 2 - End
+[Statedef 3103]
+type    = S
+movetype= A
+physics = N
+velset = 3,0
+anim = 3103
+ctrl = 0
+sprpriority = 1
+
+[State 0, PlaySnd]
+type = PlaySnd
+trigger1 = !time
+value = S3100,2
+channel = 0
+
+
+
+[State 0, VelSet]
+type = VelSet
+trigger1 = AnimElem = 4
+x = 4
+y = -10
+
+[State 0, StateTypeSet]
+type = StateTypeSet
+trigger1 = AnimElem = 4
+statetype = A       ;S,A,C,L
+physics = A         ;A,C,S,N
+ignorehitpause = 1
+
+[State 0, Explod]
+type = Explod
+trigger1 = AnimElem = 4
+anim = 3106
+ID = 3106
+pos = 51,-69
+postype = P1  ;P2, Front, Back, Left, Right
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0,0
+accel = 0,0
+random = 0,0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1,1
+sprpriority = 3
+ontop = 0
+shadow = 0,0,0
+ownpal = 1
+removeongethit = 1
+;ignorehitpause = 
+;persistent = 
+
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 3 
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=Low
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=5,10
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-90;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,5
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -3
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,-3
+air.hittime = 12
+envshake.time = 10
+envshake.ampl = 7
+forcestand = 1
+getpower=0
+
+[State 200]
+type=HitDef
+trigger1= AnimElem = 4 
+priority=3,Hit
+attr=S,NA
+guardflag=MA
+hitflag=MAF
+damage=25
+animtype=Hard
+air.animtype=Back
+fall.animtype=Back
+ground.type=High
+air.type=Low
+getpower=0,0
+givepower=11,8 
+pausetime=10,3
+sparkno=S-1
+sparkxy=var(32):=-34,var(33):=-90;;;;;;;;;must be like this for blood to have accurate x,y
+hitsound = S0,5
+guardsound = S0,9
+guard.sparkno = s7004
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 10
+ground.velocity = -6,-12
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,-3
+air.hittime = 12
+envshake.time = 15
+envshake.ampl = 10
+fall= 1
+getpower=0
+
+[State 250, hitspark heavy]
+type=helper 
+trigger1= hitpausetime=3;;;;;;;;;;;;;;;;;;;;must be 1 tick under pausetime (or at least under)
+trigger1= movehit=1 && numtarget
+helpertype=normal
+stateno=7002
+ID=7002
+name="Blood"
+postype=p2
+pos= (target,const(size.ground.front) + var(32)) * (target,facing) * (-facing), floor(pos y-target,pos y) + var(33)
+facing= ifelse((target,facing = facing), 1, -1)
+ownpal=1
+pausemovetime=65535
+supermovetime=65535
+ignorehitpause=1
+
+[State 220, 5]
+type = ChangeState
+trigger1 = !AnimTime
+value = 50
+ctrl = 0

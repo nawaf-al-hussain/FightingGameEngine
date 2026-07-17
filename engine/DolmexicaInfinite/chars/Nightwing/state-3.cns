@@ -1,0 +1,823 @@
+
+
+;=============================================================================================
+;           States that are executed when in self's state file (use statedef -3)
+;=============================================================================================
+
+[Statedef -3]
+
+[State -3, AssertSpecial]
+type = AssertSpecial
+trigger1 = RoundState !=2
+flag = nobardisplay
+ignorehitpause=1
+
+;Remove afterimage
+[State 0, AfterImageTime]
+type = AfterImageTime
+trigger1 = MoveType = H
+trigger2 = Stateno < 3000
+time = 0
+
+[State 0, PlaySnd]
+type = PlaySnd
+triggerall = numtarget
+triggerall = !(target,ishelper)&& var(35)=20001 && MoveHit && !NumExplod(222)
+trigger1 = stateno = [200,220]
+trigger2 = stateno = [400,420]
+trigger3 = stateno = [600,620]
+value = S220,1+random%2
+ignorehitpause = 1
+persistent = 0
+
+[State 1051, shock]
+type = Explod
+triggerall = numtarget
+triggerall = !(target,ishelper)&& !NumExplod(222) && var(35)=20001 && MoveHit
+trigger1 = stateno = [200,220]
+trigger2 = stateno = [400,420]
+trigger3 = stateno = [600,620]
+trigger4 = Stateno = 1600
+anim = 222+random%2
+ID = 222
+postype = P2
+pos = 0,-54
+pausemovetime = 9999
+supermovetime = 9999
+sprpriority = 500
+bindtime = -1
+ownpal = 1
+scale =0.55,0.55
+removetime=24
+ignorehitpause = 1
+
+
+
+
+; Run into the screen (tagged in)
+;[State -3, enter the screen]
+;type = ChangeState
+;triggerall = Var(51) = 1      		; Partner TAG mode activated
+;triggerall = NumPartner
+;triggerall = stateno = 4512		; Player waiting outside the screen
+;trigger1 = (NumPartner && partner, stateno = 4510) ;|| (NumPartner && partner, stateno = 4600) ;|| (NumPartner && partner, stateno = 4601)	; Partner leaving the screen
+;trigger1 = Life		                ; And you're alive
+;value = 4500
+
+; Jump into the screen (partner was KOed)
+;[State -3, enter the screen]
+;type = ChangeState
+;triggerall = Var(51)      		; Partner TAG mode activated
+;triggerall = NumPartner
+;triggerall = StateNo = 4512	; Player waiting outside the screen
+;trigger1 = !(NumPartner && partner, Life)	; Partner dead
+;trigger1 = Life			; And you're alive
+;trigger1 = NumPartner && partner, stateno = 5150
+;trigger2 = roundstate >= 3	; the match is over
+;trigger2 = Win || LoseTime || WinTime || drawgame
+;trigger2 = (NumPartner && partner,stateno=0)
+;trigger2 = (enemy,stateno=5150)
+;trigger3 = NumPartner && partner, stateno = 4511
+;value = 4520
+
+; KEEPS PARTNER OFFSCREEN 
+;[State -2, ctrl]
+;type = ChangeState
+;triggerall = Var(51)        ; Partner TAG mode activated
+;triggerall = NumPartner
+;triggerall = ID > NumPartner && partner,ID
+;triggerall = movetype != H
+;triggerall = NumPartner && partner, stateno!=[3000,3999]
+;triggerall = stateno!=[4400,4449]
+;triggerall = NumPartner && partner,stateno!=[4400,4449]
+;trigger1 = NumPartner && partner, movetype != H
+;trigger1 = NumPartner && partner, var(51) != 2
+;trigger1 = NumPartner && partner, var(52) != 1
+;trigger1 = RoundState = 2
+;trigger1 = Life && NumPartner && partner, Life		; Team is alive
+;trigger1 = NumPartner && partner, stateno != [4500,5999]
+;trigger1 = stateno != [4500,5999]
+;trigger1 = NumPartner && partner, var(55)!=1
+;value = ifelse(backEdgeDist <= -40,4512,4511)
+;persistent = 0
+
+;MAKES YOU JUMP OFFSCREEN IF HIT DURING ASSIST 
+;[State -2, ctrl]
+;type=ChangeState
+;triggerall=Var(55) 
+;trigger1=stateno=0
+;trigger2=statetype!=A&&ctrl 
+;value=4511
+
+; This sends your Partner to his Assist Call In Taunt state (means not the leader of the team).
+;[State -3, ChangeState]
+;type = ChangeState
+;triggerall = (Var(51))&&(pos y =0)
+;triggerall = NumPartner
+;triggerall = NumPartner && partner,stateno=4800
+;triggerall = NumPartner && partner,time<=20
+;triggerall = roundstate = 2
+;triggerall = movetype != H
+;triggerall = ID>NumPartner && partner,ID
+;triggerall = Life && NumPartner && partner, Life
+;trigger1 = (stateno=[0,599])
+;value =4900
+;ctrl = 0
+
+;due to the tag system you must have controll to enter the win poses, this keeps you from being able to move during 
+;the win poses  
+;[State -3, no controll during win poses]
+;type = ChangeState
+;trigger1 = (roundstate>2)&&(time=0)
+;trigger1 = NumPartner && partner,stateno=180
+;value=180
+;ctrl=0
+
+; This sends your Partner to his intro state (means not the leader of the team).
+;[State -3, ChangeState]
+;type = ChangeState
+;triggerall = NumPartner && partner,stateno=5900
+;triggerall = numenemy
+;triggerall = roundstate < 2
+;triggerall = time = 0
+;trigger1 = numpartner
+;trigger1 = ID>NumPartner && partner,ID
+;value = 199
+;ctrl = 0
+
+;KEEPS PARTNER FROM TURNING WHEN YOU JUMP ONSCREEN OR OFFSCEEN OR HAVE DIED
+;[State -3]
+;type = AssertSpecial
+;trigger1 = (enemynear,stateno=[4800,4810])||(enemynear,stateno=4511)
+;trigger1 = 1
+;trigger2 = life=0
+;flag = NoAutoTurn
+;===============================================================================================
+;This controller plays a sound everytime KFM lands from a jump or from his back-dash.
+[State -3, Landing Sound]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52 ;Jump land
+trigger2 = stateno = 106 ;Run-back land
+value = 47, 0
+
+;[State -3,PlaySnd Partner Winscreen]
+;type = PlaySnd
+;trigger1 = NumPartner && NumPartner && partner,stateno=189
+;trigger1 = Time = 1
+;value = 180, 0
+;channel=0
+;===============================================================================================
+;SUPER JUMP STATES
+[State -3,veladd]
+type = Veladd
+triggerall =command = "holdfwd"
+triggerall = prevstateno = 111 ; the superjumo state
+trigger1 = stateno = 50; jump state
+x = .05 ; maybe you need to modify these value
+
+[State -3,veladd]
+type = Veladd
+triggerall =command = "holdback"
+triggerall = prevstateno = 111
+trigger1 = stateno = 50
+x = -.05
+;===============================================================================================
+
+[State -3, Fake helper];FOR FIRST ATTACK
+type = helper
+trigger1 = roundstate = 2 && !numhelper(8500)
+helpertype = Normal
+id = 8500
+pos = 0,0
+postype = p1
+name = "Fake Helper"
+stateno = 8500
+supermovetime = 9999999999
+pausemovetime = 9999999999
+
+[State -3, Dummy Helper];FOR PERFECT!
+type = helper
+triggerall = !numpartner
+trigger1 = time = 1 && !numhelper(8550)
+helpertype = normal
+name = "Dummy Helper"
+ID = 8550
+stateno = 8550
+;pos = 0,-99999999999999999
+postype = left    ;p2,front,back,left,right
+ownpal = 0
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause = 1
+persistent = 0
+;=============================================================================================
+;           States that are executed when in self's state file (use statedef -3)
+;=============================================================================================
+
+
+[State -3: ChangeState]
+type = ChangeState
+triggerall = (Var(0)) && (StateType != A) && (Ctrl) && (EnemyNear, Facing != Facing)
+trigger1 = (P2StateType != C) && (P2MoveType = A) && ((InGuardDist) || (EnemyNear, NumProj > 0))
+trigger2 = (p2bodydist X <= 150) && (Facing = 1) && (EnemyNear, Facing = -1) && (P2MoveType = A)
+trigger3 = (p2bodydist X <= 150) && (Facing = -1) && (EnemyNear, Facing = 1) && (P2MoveType = A)
+trigger4 = (stateno=0) && (prevstateno=5120) && (EnemyNear, Stateno=[3000,3999])
+value = 130
+
+[State -3: ChangeState]
+type = ChangeState
+triggerall = (Var(0)) && (StateType != A) && (Ctrl) && (EnemyNear, Facing != Facing)
+trigger1 = (P2StateType = C) && (P2MoveType = A) && ((InGuardDist) || (EnemyNear, NumProj > 0))
+value = 131
+
+[State -3: ChangeState]
+type = ChangeState
+triggerall = (Var(0)) && (StateType = A) && (Ctrl) && (EnemyNear, Facing != Facing)
+trigger1 = (P2MoveType = A) && ((InGuardDist) || (EnemyNear, NumProj > 0))
+trigger1 = (vel x !=const(velocity.airjump.fwd.x)) && (vel y >=1) && (p2statetype=A)
+value = 132
+
+;===============================================================================================
+;                                          Corner Push 
+;===============================================================================================
+[State -3, Corner Push1]
+type= varset
+trigger1= fvar(5)
+trigger1= numtarget
+trigger1= target,hitover || (target,gethitvar(hitshaketime)>0 && target,time<=0)
+fvar(5)= 0
+
+[State -3, Corner Push2]
+type= varset
+trigger1= movecontact=1 && numtarget
+fvar(5)= target,gethitvar(xvel)
+ignorehitpause= 1
+
+[State -3, Corner Push4]
+type= posadd
+triggerall= fvar(5)
+triggerall= statetype!=L && numtarget
+triggerall= (target,statetype!=L)
+triggerall= !hitpausetime && target,gethitvar(hitshaketime)<=0
+trigger1= target,frontedgebodydist<=abs(target,vel x)
+trigger1= (target,gethitvar(xvel) * target,facing)>0
+trigger2= target,backedgebodydist<=abs(target,vel x)
+trigger2= (target,gethitvar(xvel) * target,facing)<0
+x= ifelse(target,frontedgebodydist<=0, -1, 1) * (target,facing) * fvar(5)
+
+[State -3, Corner Push5]
+type= varset
+trigger1= numtarget
+trigger1= target,gethitvar(hitshaketime)<=0
+fvar(5)= fvar(5)*.85
+;================================================================================================
+;                                         COLLAPSE/CHEAP DEATH
+;================================================================================================
+[State -3, Cheap KO]
+type=changestate
+;trigger1=NumPartner && (NumPartner && partner,stateno!=4512)
+trigger1=!alive && (stateno=[5000,5010])
+trigger1=(prevstateno=[130,131]) || (prevstateno=[140,141]) || (prevstateno=[150,153])
+value=5130
+ignorehitpause=1
+;===============================================================================================
+;                                       Variable State Set 
+;===============================================================================================
+;THIS PREVENTS YOU FROM BEING ABLE TO TAG WHEN THE FIGHT IS OVER
+[State -3, PARTNER TAG MODE NOT ACTIVE]
+type=varset
+trigger1=roundstate >=3
+var(51)=0
+
+;THIS ACTIVATES THE TAG MODE IN SIMULTANIOUS MODE
+[State -3, activate tag]
+type = VarSet
+trigger1 = teammode = simul
+trigger1 = roundstate < 1
+trigger1 = time = [0,1]
+v = 51
+value = 1
+
+;THIS TAKES AWAY CONTROL 
+[state -3]
+type = ctrlset
+trigger1 = var(52) = 1
+value = 0
+
+;THIS JUST LET YOU SEE YOUR PARTNERS STATENO
+;[State -3, PARTNER STATENO]
+;type=varset
+;triggerall = NumPartner
+;trigger1=1
+;var(50)=(NumPartner && partner,stateno)
+
+;THIS MAKES SURE THE DHC IS RESET AND NOT ACTIVE IF YOU DO NOT REACH THE VAR(14) RESET IN THE HYPER STATE
+;[State -3, DHC RESET]
+;type=varset
+;triggerall = NumPartner
+;trigger1=(stateno=0)||(NumPartner && partner,stateno=0)
+;var(14)=0
+
+;THIS SETS VARIABLE FOR PARTNER TO YOUR VARIABLE
+[state -3]
+type =NULL; varset
+triggerall = NumPartner
+trigger1 = ID > NumPartner && partner, ID
+v = 31
+value = (NumPartner && partner,var(31))
+
+;THIS SETS YOU AS THE FIRST PLAYER
+;[State -3]
+;type = Varset
+;triggerall = numpartner != 0
+;trigger1 = var(53)=0
+;trigger2 = roundstate = 0 
+;v = 53
+;value=1+((NumPartner && partner, id) < id)
+
+;THIS KEEPS YOUR PARTNER FROM HAVING CONTROL SO HE USES YOUR COMMANDS
+[State -3, 2nd character always no ctrl]
+type = CtrlSet
+trigger1 = Var(53)= 2 
+value =0
+ignorehitpause = 1
+
+;THIS TAKES CONTROL AWAY FROM YOUR PARTNER 
+[State -3, 2nd character always no ctrl]
+type = VarSet
+triggerall = Var(53)=2
+trigger1 = (StateNo !=0 && StateNo !=10 &&StateNo !=11 &&StateNo!=12 &&StateNo!=20 &&(StateNo!=[50,51])&&stateno!=100)
+trigger1 = (StateNo !=120 &&StateNo !=130 &&StateNo !=131 &&StateNo !=460 &&StateNo !=5040)
+trigger1 = StateNo !=52
+trigger2 = movetype =h
+trigger3 = StateNo = 5 && time = 0
+var(54)=0 
+
+;THIS KEEPS YOUR PARTNER FROM HAVING CONTROL SO HE USES YOUR COMMANDS
+[State -3, 2nd character always no ctrl]
+type = VarSet
+triggerall = movetype !=h
+triggerall = Var(53)=2 && RoundState = 2
+trigger1 = (StateNo =0 ||StateNo =10 ||StateNo =11 ||stateno=12 ||stateno=20 ||(stateno=[50,51])||stateno=100)
+trigger2 = (StateNo =120 ||StateNo =130 ||StateNo =131 ||StateNo =460 ||StateNo =5040)
+trigger3 = StateNo = 5 && time = 1
+var(54)=1
+
+;THIS KEEPS YOUR PARTNERS DHC ACTIVATOR THE SAME AS YOURS WHEN IN STATE 4512
+;[state -3, DHC Activator]
+;type=varset
+;triggerall = NumPartner
+;trigger1=1
+;v=14
+;value=(NumPartner && partner,var(14))
+
+;THIS RESETS YOUR PARTNERS DHC ACTIVATOR
+[state -3, DHC Safety Reset]
+type=varset
+trigger1=var(14)!=0&&statetype!=A&&stateno=[0,2999]
+v=14
+value=0
+
+;THIS SETS VARIABLE FOR PARTNER TO YOUR VARIABLE
+;[state -3, No Spam]
+;type=varset
+;triggerall = NumPartner
+;trigger1=ID>NumPartner && partner,ID
+;v=19
+;value=(NumPartner && partner,var(19))
+;===============================================================================================
+;                                    Normal & Special KO States 
+;===============================================================================================
+[State -3, VarSet]
+type=VarSet
+trigger1=roundstate=2
+var(58)=0
+
+[state -3, VarSet]
+type=VarSet
+triggerall=var(58)=0
+triggerall=winko
+trigger1=(stateno=[200,661])
+trigger2=(stateno=[1000,1999])
+trigger3=(stateno=4501)||(stateno=4510)
+var(58)=1
+ignorehitpause=1
+
+[state -3, helper]
+type=null;helper
+triggerall=NumHelper(9650)=0
+triggerall=var(58)=1
+trigger1=numtarget
+stateno=9650
+ID=9650
+pos=0,0
+postype=p1
+helpertype=normal
+name="ko-sounds"
+pausemovetime=999
+supermovetime=999
+ignorehitpause = 1
+;===============================================================================================
+;                                         Hyper KO States 
+;===============================================================================================
+[State -3, VarSet]
+type=null;VarSet
+trigger1=roundstate=2
+var(58)=0
+
+[state -3, VarSet]
+type=null;VarSet
+triggerall=(var(58)=0)
+triggerall=winko
+trigger1=stateno=[3000,3999];hyper states
+trigger2=stateno=[4000,4499];delayed hyper states
+trigger3=stateno=[4600,4799];team hyper state
+var(58)=2
+ignorehitpause=1
+
+[state -3, helper]
+type=null;helper
+triggerall=NumHelper(9600)=0
+trigger1=var(58)=2
+stateno=9600
+ID=9600
+pos=0,0
+postype=p1
+helpertype=normal
+name="Hko-sounds"
+pausemovetime=999
+supermovetime=999
+ignorehitpause = 1
+;================================================================================================
+;                                         GetHit Sounds 
+;================================================================================================
+[State -3, light]
+type = PlaySnd
+triggerall = stateno = 5000 && life >= 200
+trigger1 = anim = 5000 || anim = 5010 || anim = 5020
+trigger1 = time = 1
+trigger1 = random < 300
+value = 2,21
+
+[State -3, light]
+type = PlaySnd
+triggerall = stateno = 5020 && life >= 200
+trigger1 = anim = 5000 || anim = 5010 || anim = 5020
+trigger1 = time = 1
+trigger1 = random < 300
+value = 2,ifelse(random<150,23,22)
+
+[State -3, medium]
+type = PlaySnd
+triggerall = stateno = 5000 && life >= 200
+trigger1 = random < 300
+trigger1 = time = 1
+trigger1 = anim = 5001 || anim = 5011 || anim = 5021
+value = 2,24
+
+[State -3, medium]
+type = PlaySnd
+triggerall = stateno = 5020 && life >= 200
+trigger1 = anim = 5001 || anim = 5011 || anim = 5021
+trigger1 = random < 300
+trigger1 = time = 1
+value = 2,ifelse(random<150,26,25)
+
+[State -3, heavy]
+type = PlaySnd
+triggerall = stateno = 5000 && life >= 200
+trigger1 = random < 300
+trigger1 = time = 1
+trigger1 = anim = 5002 || anim = 5012 || anim = 5022
+value = 2,27
+
+[State -3, heavy]
+type = PlaySnd
+triggerall = stateno = 5000 && life >= 200
+trigger1 = anim = 5002 || anim = 5012 || anim = 5022
+trigger1 = random < 300
+trigger1 = time = 1
+value = 2,ifelse(random<150,29,28)
+;================================================================================================
+;                                         Recovery Rolls Partner 
+;================================================================================================
+;[State -3]
+;type =varset
+;triggerall = NumPartner
+;triggerall=var(49)!=1&&life!=0
+;trigger1=alive&&stateno=5120
+;trigger1=var(53)=2
+;trigger1=command="holdfwd"||NumPartner && NumPartner && partner,command="holdfwd"
+;trigger1=time=[0,1]
+;trigger2=var(53)=2
+;trigger2=command = "recovery_roll"||NumPartner && NumPartner && partner,command = "recovery_roll"
+;trigger2=(StateNo = 5030) || (StateNo = 5035) || (StateNo = 5050) || (StateNo = 5071)
+;trigger2=alive
+;trigger2=movetype != A
+;;trigger2=time=[0,1]
+;trigger2=vel Y > 0
+;v=40
+;value=ifelse(movetype=H,0,ifelse(!alive,0,1))
+
+;[State -3]
+;type =varset
+;triggerall = NumPartner
+;triggerall=var(49)!=1&&life!=0
+;trigger1=alive&&stateno=5120
+;trigger1=var(53)=2
+;trigger1=command="holdback"||NumPartner && partner,command="holdback"
+;trigger1=time=[0,1]
+;trigger2=var(53)=2
+;trigger2=command = "recovery_rollback"||NumPartner && NumPartner && partner,command = "recovery_rollback"
+;trigger2=(StateNo = 5030) || (StateNo = 5035) || (StateNo = 5050) || (StateNo = 5071)
+;trigger2=alive
+;trigger2=movetype != A
+;;trigger2=time=[0,1]
+;trigger2=vel Y > 0
+;v=40
+;value=ifelse(movetype=H,0,ifelse(!alive,0,2))
+
+[State -3,Recovery Roll forward]
+type = ChangeState
+triggerall=var(49)!=1&&life!=0
+trigger1=alive&&stateno=5120
+trigger1=var(53)=2
+trigger1=var(40)=1;||NumPartner && NumPartner && partner,var(40)=1
+trigger1=time=[0,3]
+value=940
+ctrl=1
+
+[State -3,Recovery Roll back]
+type = ChangeState
+triggerall=var(49)!=1&&life!=0
+trigger1=alive&&stateno=5120
+trigger1=var(53)=2
+trigger1=var(40)=2;||NumPartner && NumPartner && partner,var(40)=2
+trigger1=time=[0,3]
+value=941
+ctrl=1
+
+[State -3,Tech Hit Recovery Roll Forward]
+type=ChangeState
+value=942
+triggerall=var(49)!=1&&life!=0
+trigger1=alive&&Roundstate=2
+trigger1=var(53)=2
+trigger1=(StateNo = 5030) || (StateNo = 5035) || (StateNo = 5050) || (StateNo = 5071)
+trigger1=var(40)=1;||NumPartner && NumPartner && partner,var(40)=1
+;trigger1=time=[0,1]
+trigger1=pos Y > -10
+trigger1=vel Y > 0
+trigger1=anim=5052||anim=5060
+
+[State -1,Tech Hit Recovery Roll Back]
+type=ChangeState
+value=943
+triggerall=var(49)!=1&&life!=0
+trigger1=alive&&Roundstate=2
+trigger1=var(53)=2
+trigger1=(StateNo = 5030) || (StateNo = 5035) || (StateNo = 5050) || (StateNo = 5071)
+trigger1=var(40)=2;||NumPartner && NumPartner && partner,var(40)=2
+;trigger1=time=[0,1]
+trigger1=pos Y > -10
+trigger1=vel Y > 0
+trigger1=anim=5052||anim=5060
+;================================================================================================
+;                                          DHC VARIABLE  
+;================================================================================================
+;[State -3, DHC DRAGON PUNCH COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dp_xy"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=5
+;ignorehitpause=1
+;[State -3, DHC DRAGON PUNCH COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dp_ab"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=6
+;ignorehitpause=1
+;
+;
+;
+;[State -3, DHC FIREBALL COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=(command="qcf_xy")&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=1
+;ignorehitpause=1
+;[State -3, DHC FIREBALL COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="qcf_ab"&&(var(57)=0) 
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=2
+;ignorehitpause=1
+;
+;[State -3, DHC HURRICANE COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="qcb_xy"&&(var(57)=0) 
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=3
+;ignorehitpause=1
+;
+;[State -3, DHC HURRICANE COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="qcb_ab"&&(var(57)=0) 
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=4
+;ignorehitpause=1
+;
+;[State -3, DHC DRAGON PUNCH COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dp_xy"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000)
+;var(57)=5
+;ignorehitpause=1
+;
+;[State -3, DHC DRAGON PUNCH COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dp_ab"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=6
+;ignorehitpause=1
+;
+;[State -3, DHC REVERSE DRAGON COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="rdp_xy"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=7
+;ignorehitpause=1
+;
+;[State -3, DHC REVERSE DRAGON COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="rdp_ab"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=8
+;ignorehitpause=1
+;
+;[State -3, DHC HALF CIRCLE FORWARD COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="hcf_xy"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=9
+;ignorehitpause=1
+;
+;[State -3, DHC HALF CIRCLE FORWARD COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="hcf_ab"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=10
+;ignorehitpause=1
+;
+;[State -3, DHC HALF CIRCLE BACK COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="hcb_xy"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=11
+;ignorehitpause=1
+;
+;[State -3, DHC HALF CIRCLE BACK COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="hcb_ab"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=12
+;ignorehitpause=1
+;
+;[State -3, DHC DOWN DOWN COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dd_xyz"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=13
+;ignorehitpause=1
+;
+;[State -3, DHC DOWN DOWN COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="dd_abc"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=14
+;ignorehitpause=1
+;
+;[State -3, DHC DEMON RAGE COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="shun"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=15
+;ignorehitpause=1
+;
+;[State -3, DHC DEMON RAGE COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="shun 2"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=16
+;ignorehitpause=1
+;
+;[State -3, DHC BACK FORWARD COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="BFXY"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=17
+;ignorehitpause=1
+;
+;[State -3, DHC BACK FORWARD COMMANDS]
+;type=varset
+;triggerall = NumPartner
+;trigger1=command="BFAB"&&(var(57)=0)
+;trigger1=(stateno=4512)||(stateno=[3000,3999])
+;trigger1=(NumPartner && partner,life >0)&&(Var(51)=1)&&(power>=1000) 
+;var(57)=18
+;ignorehitpause=1
+;===============================================================================================
+;                                          VARIABLE LIST                    
+;===============================================================================================
+; Var(0) 	- AI
+; Var(1) 	- Used in Leo.cmd for combo condition (updated every tick)
+; var(2)        - Win - Random 
+; Var(3) 	- Intro - Random
+; Var(4) 	- Taunt - Random
+; Var(5) 	- Aerial Rave Finisher
+; Var(6) 	- Aerial Rave Finisher - HIT COUNTER
+; Var(7) 	- Air Dash System
+; Var(8) 	- Dizzy
+; Var(9)        - Dizzy Button Mash
+; var(10)       - Used in Hyper Combo Finish BG
+; var(11)       - Guard Push
+; var(12)       - Danger sound and text display
+; var(13)       - KO/Cheap Death Sounds
+; var(14)       - DHC Activator
+; var(15)       - Random X
+; var(16)       - random Y
+; var(17)       - Super Jump Velset Detector
+; var(18)       - Hitcount Dampener
+; var(19)       - No Spam
+
+; var(26)       -  
+
+; var(30)       - Lightning Kicks
+; var(31)       - Lightning Kicks
+
+
+
+; var(41)       - Sparkxy
+; var(42)       - Sparkxy
+; var(43)       - Sparkxy
+; var(44)       - Sparkxy
+; var(45)       - Sparkxy
+; var(46)       - Sparkxy
+; var(47)       - Sparkxy
+
+
+; Var(50)       - Partner Stateno
+; Var(51)       - Simul TAG flag
+; Var(52)       - Player Ctrsets
+; Var(53)       - Player Ctrsets
+; Var(54)       - P2 Ctrsets
+; Var(55)       - Assist Triggers
+; Var(57)       - DHC Command Varset
+; Var(58) 	- Normal & Special KO Sounds
+; Var(59) 	- AI
+
+; fvar(5) - Corner Push
+; fvar(10) - Sets the Damage Dampener in the AttackMulSet sctrl...
+; fvar(12) - Counts how many hit s you got in current combo
+
+
+

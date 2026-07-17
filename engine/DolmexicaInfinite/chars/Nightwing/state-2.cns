@@ -1,0 +1,639 @@
+;================================================================================================
+;                         States that are always executed (use statedef -2)
+;================================================================================================
+
+[Statedef -2]
+
+;Debug
+[State -2, Debug Flag Display]
+type = DisplayToClipboard
+trigger1 = 1
+text = "var(25) = %d - Var(35) = %d - P2: %d - = %d "
+params = var(25),var(35), P2BodyDist X, P2BodyDist Y
+
+[State 0, AppendToClipboard]
+type = AppendToClipboard
+trigger1 = 1
+text = "\nNightwing by JMaxx and O Ilusionista - Power =  %d"
+params = Power
+
+[State -2, P2 Facing]
+type=targetfacing
+trigger1= movecontact=1 && numtarget
+trigger1= !(target,hitshakeover) && !(target,hitfall) && (target,time<=1)
+value= ifelse(p2dist x>=0, -1, 1)
+ignorehitpause=1
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "a"
+v = 25
+value = 0
+;ignorehitpause =
+;persistent =
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "b"
+v = 25
+value = 1
+;ignorehitpause =
+;persistent =
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "c"
+v = 25
+value = 2
+;ignorehitpause =
+;persistent =
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "x"
+v = 25
+value = 0
+;ignorehitpause =
+;persistent =
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "y"
+v = 25
+value = 1
+;ignorehitpause =
+;persistent =
+
+[State 0, VarSet]
+type = VarSet
+trigger1 = command = "z"
+v = 25
+value = 2
+;ignorehitpause =
+;persistent =
+
+
+;================================================================================================
+;                                  DANGER SOUND AND DISPLAY TRIGGERS
+;================================================================================================
+;Danger!
+[State -2, Danger]
+type = PlaySnd
+triggerall = Var(12) = 1
+triggerall = (Teamside =1 && IsHomeTeam) || (Teamside =2 && !IsHomeTeam) || (TeamSide=1 && !IsHomeTeam)
+trigger1 = Life <= 200
+value =9600,2
+
+[State -2, Danger]
+type = Explod
+trigger1 = NumExplod(8000) = 0
+trigger1 = Var(12) = 1
+anim = 8000
+sprpriority = 100
+postype = Left
+pos = ifelse(TeamSide = 2,240,80),55
+bindtime = -1
+supermove = 1
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+ontop = 1
+scale=.8,.8
+size.shadowoffset = -9999
+id = 8000
+
+[State -2, Danger VarAdd]
+type = varadd
+triggerall = Life <= 200
+trigger1 = Var(12) <= 2 
+v = 12
+value = 1
+;================================================================================================
+;                                   KO/CHEAP DEATH SOUND TRIGGERS
+;================================================================================================
+[State -2, KO snd]
+type = varset
+trigger1 = alive && var(13) > 0
+trigger2 = !alive && var(13) < 2
+var(13) = ifelse(alive, 0, var(13) + 1)
+ignorehitpause = 1
+
+;THIS WILL PLAY YOU KO SOUND WHEN KILLED, IT COULD ALSO PLAY THE CHEAP DEATH SOUND WHEN IN STATE 5130 BUT USUALLY
+;THE CHEAP DEATH SOUND IS NOT PLAYED AT THE VERY BEGINNING OF THE CHEAP DEATH STATE, IF IT IS THEN PUT IT HERE
+[State -2, KO snd]
+type =playsnd
+trigger1 = !alive && var(13) = 1
+trigger1 = var(13) := 2
+value =S2,ifelse(stateno=5130,-1,0)
+ignorehitpause=1
+;================================================================================================
+;                                        Remove Explodes
+;================================================================================================
+[State -2,Dizzy Stars] 
+type=RemoveExplod
+trigger1=stateno!=[9001,9004] 
+ID=9001
+
+;================================================================================================
+;                              Damage Dampener (Combos take less damage)
+;================================================================================================
+;BASIC ATTACKS
+[State -2, Damage based on hits]
+type=varset
+trigger1=numenemy
+fvar(12)=enemynear,gethitvar(hitcount)
+ignorehitpause=1
+
+[State -2, Reset var when the opponent recovers]
+type=varset
+trigger1=numenemy
+trigger1=(enemynear,movetype!=H)
+trigger2=!numenemy
+fvar(12)=1
+
+[State -2, Dampener]
+type=varset
+trigger1=1
+trigger1=stateno!=[3000,3999]
+fvar(10)= ifelse(fvar(12)=0, 1, ifelse(fvar(12)=1, .9, .8**fvar(12)))
+ignorehitpause=1
+
+[State -2, Dampener itself]
+type=attackmulset
+trigger1=1
+trigger1=stateno!=[3000,3999]
+value=fvar(10)
+ignorehitpause=1
+
+[State -2, Dampener itself]
+type=attackmulset
+trigger1=1
+trigger1=stateno=[3000,3999]
+value=1
+ignorehitpause=1
+
+;===============================================================================================
+;                                         Dizzy State 
+;===============================================================================================
+;DIZZY STATES
+[State -2]
+type = Varset
+triggerall = life > 0 && time = 0
+triggerall = stateno = [5000,5999]
+trigger1 = stateno = [9005,9010]
+var(8) = 0
+ignorehitpause = 1
+
+;This is used to recover the stun meter when the character is not hit.
+[State -2]
+type = VarAdd
+triggerall = (Var(8) > 0)
+trigger1 = 1
+v = 8
+value = -1
+ignorehitpause = 1
+
+[State -2,0 for light]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 0
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,15,70))
+ignorehitpause = 1 
+
+[State -2,1 for medium]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 1
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,20,100))
+ignorehitpause = 1 
+
+[State -2,2 for heavy]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 2
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,30,130))
+ignorehitpause = 1 
+
+[State -2,3 for back]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 3
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H 
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,25,60))
+ignorehitpause = 1 
+
+[State -2, 4 for up]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 4
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,35,70))
+ignorehitpause = 1 
+
+[State -2, 5 for diag-up]
+type = VarAdd
+triggerall = life > 0 && time = 0
+triggerall = var(8) <= 999
+triggerall = gethitvar(animtype) = 5
+triggerall = stateno!= [120,155]
+trigger1 = stateno = [5000,5999]
+trigger1 = Movetype = H
+var(8) =ifelse(enemynear,stateno>=3000,0,ifelse(enemynear,stateno>=1000,40,80))
+;persistent = 0;------persistent does not work in negative states
+ignorehitpause = 1
+
+[State -2]
+type = ChangeState
+triggerall = life > 0
+trigger1 = var(8) >= 1000
+trigger1 = HitShakeOver
+value = 9010
+ctrl = 0
+ignorehitpause= 1
+
+[State -2, Red PalFX] 
+type = PalFX
+triggerall = RoundState != 4
+trigger1 = var(8) >= 600
+add=Floor((0+124*sin((2*pi*(time))/20.0))+0.5),Floor((0+0*sin((2*pi*(time))/20.0))+0.5),Floor((0+0*sin((2*pi*(time))/20.0))+0.5)
+time = 1
+;================================================================================================
+;                                     Hitspark/Guardspark Positions
+;================================================================================================
+[State -2, HitPause]
+type=varset
+trigger1= movecontact!=1
+var(47)=gametime+2
+
+[State -2, HitSparks]
+type=helper
+trigger1= var(47)=gametime
+trigger1= movehit=1 && numenemy
+trigger1= var(41)=8010 || var(41)=8015 || var(41)=8020 || var(41)=8025 || var(41)=8030
+helpertype=normal
+stateno=var(41)
+ID=8000
+name="Spark"
+postype=p2
+pos= (enemynear,const(size.ground.front) + var(47)) * (enemynear,facing) * (-facing), floor(pos y-enemynear,pos y) + var(47)
+facing= ifelse((enemynear,facing = facing), 1, -1)
+ownpal=1
+size.xscale=.5
+size.yscale=.5
+pausemovetime=65535
+supermovetime=65535
+ignorehitpause=1
+
+[State -2, Reset]
+type=varrangeset
+trigger1= movetype=I 
+trigger2= movetype=H && time
+first=41
+last=47
+value=-1
+ignorehitpause=1
+[State -2, HitPause]
+type=varadd
+trigger1= var(47)>0
+var(47)=-1
+ignorehitpause=1
+
+;===============================================================================================
+; Camera won't follow you during any of the tagging phases or if you previously were on a tagging phase state.
+; This is to prevent you from being in the battle field once the round starts or ends.
+[State -2]
+type = ScreenBound
+triggerall = numpartner
+trigger1 = stateno = 199
+value = 0
+movecamera = 0,0
+ignorehitpause = 1
+persistent = 1
+;===============================================================================================
+[state -2, Destroyself]
+type = screenbound
+trigger1 = var(11) = 1
+value = 0
+movecamera = 0,0
+;===============================================================================================
+; sound when recovering in air or on ground
+[state -2, 1]
+type=playsnd
+triggerall=time=1
+trigger1=stateno=5201
+trigger2=stateno=5210
+trigger3=stateno=5040
+value=s2,60
+channel=2
+
+; sound when hitting the ground
+[state -2, 1]
+type=playsnd
+triggerall=time=1
+trigger1=stateno=5100
+value=s0,ifelse(vel y >=10,16,15)
+channel=0
+;===============================================================================================
+; combo hitcount
+[state -2, 1]
+type = varset
+trigger1 = 1
+v = 18
+value = GetHitVar(hitcount)
+ignorehitpause = 1
+
+[state -2]
+type = Defencemulset
+trigger1 = var(18) > 1
+value = 1/(.3*var(18))
+ignorehitpause = 1
+;===============================================================================================
+;              Flying Screen Effect (Vs series feature)  - TUTORIAL By FerchogtX
+;===============================================================================================
+[State -2, Flying Screen Var Reset]
+type = VarSet
+triggerall = numenemy > 0
+trigger1 = P2MoveType != H
+trigger2 = (enemy, alive = 0) && roundstate > 2
+var(5) := var(6) := 0
+
+[State -2, Flying Screen ScreenBound]
+type = ScreenBound
+trigger1 = (stateno = [620, 625]) && (var(6))
+trigger2 = (stateno = [650, 655]) && (var(6))
+trigger3 = (stateno = [660, 665]) && (var(6))
+value = 0
+movecamera = 0,0
+ignorehitpause = 1
+
+[State -2, Don't exchange Positions with foe if AR in corner]
+type = PosAdd
+triggerall = stateno != [3000, 4999]
+trigger1 = (PrevStateNo = [620, 625]) && (FrontEdgeDist < 35)
+trigger2 = (PrevStateNo = [650, 655]) && (FrontEdgeDist < 35)
+trigger3 = (PrevStateNo = [660, 665]) && (FrontEdgeDist < 35)
+x = -5
+ignorehitpause = 1
+
+[State -2, Dash On Screen after Flying Screen]
+type = ChangeState
+triggerall = (BackEdgeDist < 5) && (Pos Y < -50)
+trigger1 = (stateno = [620, 625]) && (var(6))
+trigger2 = (stateno = [650, 655]) && (var(6))
+value = 7600
+ctrl = 0
+
+[State -2, Dash On Screen after Flying Screen]
+type = ChangeState
+trigger1 = (stateno = [660, 665]) && (var(6))
+value = 7700
+ctrl = 0
+
+[State -2, Flying Screen (Aerial Rave)]
+type = Helper
+triggerall = !NumHelper(7500)
+triggerall = P2Stateno != [150, 155]
+trigger1 = (stateno = [620, 625]) && (var(6))
+trigger2 = (stateno = [650, 655]) && (var(6))
+trigger3 = (stateno = [660, 665]) && (var(6))
+name = "FS Effect (Aerial Rave)"
+ID = 7500
+stateno = 7500
+pos = 0,0
+postype = p2
+ownpal = 1
+bindtime = 1
+size.air.back = 20
+size.air.front = 20
+ignorehitpause = 1
+persistent = 0
+
+;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+
+; END
+
+[State -2, Hyper Combo Finish FX]
+type = Helper
+triggerall = (WinKO) && (NumHelper(9700) = 0)
+trigger1 =  (hitdefattr = SCA, HA,HP)
+trigger2 = ProjHitTime(3330) = 0
+trigger3 = Stateno = [3002,4999]
+helpertype = Normal
+name = "Hyper Combo Finish FX"
+ID = 9700
+stateno = 9700
+pos = 0,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+ownpal = 0
+supermove=9999
+pausemove=9999
+ignorehitpause=1
+
+
+[State -2: Helper]
+type = Helper
+triggerall = (WinKO) && (NumHelper(8420) = 0)
+trigger1 = (hitdefattr = SCA, SA,SP)
+helpertype = Normal
+name = "Super WinKO"
+id = 8420
+pos = 0,0
+postype = p1
+facing = 0
+stateno = 8420
+keyctrl = 0
+ownpal = 1
+ignorehitpause=1
+supermovetime = 1000
+pausemovetime = 1000
+
+;---------------------- Integer variable list ----------------------
+
+; var(0):= 2184 - Placeholder Helper
+;          1191 - HANDGLIDER
+;          1192 - Jaguar's State
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+; var(1):= 184 - WIN JUMP TO CEILING
+;          2184 - Placeholder Helper
+;          1191 - HANDGLIDER
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          50 - jump Up
+; var(2):= 184 - WIN JUMP TO CEILING
+;          2184 - Placeholder Helper
+; var(3):= 102 - AIR DASH
+;          107 - AIR DASH Back
+;          2191 - JUMP OFF HANDGLIDER
+; var(4):= 1200 - Justice Upper
+; var(5):= 184 - WIN JUMP TO CEILING
+;          600 - Jump Light Punch
+;          610 - Jump Medium Punch
+;          620 - Jump Strong Punch
+;          630 - Jump Light Kick
+;          640 - Jump Medium Kick
+;          650 - Jump Strong Kick
+;          -2
+; var(6):= 115 - Taunt
+;          625 - Jump Strong Punch
+;          655 - Jump Strong Kick
+;          -2
+; var(8):= 9011 - This is the character's state where he/she is being knocked out when the stun meter has reached it's limit.
+;          -2
+; var(9):= 9004 - Dizzy Button Mash state
+;var(10):= 700 - Guard Push Standing
+;          705 - Guard Push Crouching
+;var(12):= -2
+;var(13):= -2
+;var(14):= -3
+;          -3
+;var(17):= 40 - Jump Start
+;var(18):= -2
+;var(19):= -3
+;          -3
+;var(20):= 1000 - Throw Batrangs
+;          1005 - Batrangs
+;          1300 - Spin Kick
+;          1400 - Smoke Teleport
+;          3000 - HYPER 1
+;var(25):= -2
+;var(31):= 942 - Recovery Roll Forward
+;          943 - Recovery Roll Back
+;var(32):= 200 - Stand Light Punch
+;          210 - Standing Medium punch
+;          220 - Standing strong punch
+;          230 - Standing light kick
+;          240 - Standing medium kick
+;          250 - Standing hard kick
+;          400 - Crouching light punch
+;          410 - Crouching medium punch
+;          420 - Crouching strong punch
+;          430 - Crouching light kick
+;          440 - Crouch Medium Kick
+;          450 - Crouching Hard Kick
+;          600 - Jump Light Punch
+;          610 - Jump Medium Punch
+;          620 - Jump Strong Punch
+;          630 - Jump Light Kick
+;          640 - Jump Medium Kick
+;          650 - Jump Strong Kick
+;          801 - Stand Punch Throw - Throwing Opponent
+;          811 - Ground Throw Kicks P1 State
+;          851 - Air Throw - Throwing Opponent
+;          896 - P1 GROUND THROW TECH HIT STATE
+;          897 - P2 GROUND THROWN TECH HIT STATE
+;          898 - P2 AIR THROW TECH HIT State
+;          899 - P1 AIR THROW TECH HIT STATE
+;          1005 - Batrangs
+;          1200 - Justice Upper
+;          1300 - Spin Kick
+;          1301 - Spin Kick - weak
+;          1302 - Spin Kick - MEDIUM
+;          1303 - Spin Kick - hard
+;          1305 - Spin Kick - follow 1
+;          1306 - Spin Kick - follow 2
+;          1410 - Teleport - stage 2
+;var(33):= 200 - Stand Light Punch
+;          210 - Standing Medium punch
+;          220 - Standing strong punch
+;          230 - Standing light kick
+;          240 - Standing medium kick
+;          250 - Standing hard kick
+;          400 - Crouching light punch
+;          410 - Crouching medium punch
+;          420 - Crouching strong punch
+;          430 - Crouching light kick
+;          440 - Crouch Medium Kick
+;          450 - Crouching Hard Kick
+;          600 - Jump Light Punch
+;          610 - Jump Medium Punch
+;          620 - Jump Strong Punch
+;          630 - Jump Light Kick
+;          640 - Jump Medium Kick
+;          650 - Jump Strong Kick
+;          5080 - HITL_SHAKE
+;          1005 - Batrangs
+;          1200 - Justice Upper
+;          1300 - Spin Kick
+;          1301 - Spin Kick - weak
+;          1302 - Spin Kick - MEDIUM
+;          1303 - Spin Kick - hard
+;          1305 - Spin Kick - follow 1
+;          1306 - Spin Kick - follow 2
+;          1410 - Teleport - stage 2
+;var(35):= 1100 - Mode Change
+;var(40):= 940 - Lie Down Recovery Roll Forward
+;          941 - Lie Down Recovery Roll back
+;          942 - Recovery Roll Forward
+;          943 - Recovery Roll Back
+;          -3
+;          -3
+;var(41):= -2
+;var(47):= -2
+;var(50):= 101 - RUN_FWD LAND
+;          400 - Crouching light punch
+;          -3
+;          -3
+;var(51):= 811 - Ground Throw Kicks P1 State
+;          -3
+;          -3
+;var(53):= -3
+;          5900 - initialize (at the start of the round)
+;          -3
+;var(54):= 100 - Dash Forward
+;          105 - RUN_BACK
+;          -3
+;          50 - jump Up
+;          52 - jump land
+;          140 - GUARD (end)
+;          5040 - HITA_RECOV (recovering in air, not falling)
+;          -3
+;var(57):= -3
+;          3000 - HYPER 1
+;          -3
+;var(58):= 9600
+;          9650 - NORMAL ATTACK KO HELPER STATE
+;          9650 - NORMAL ATTACK KO HELPER STATE
+;          -3
+;          -3
+
+;---------------------- Float variable list ----------------------
+
+; fvar(0):= 2184 - Placeholder Helper
+;          811 - Ground Throw Kicks P1 State
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+; fvar(1):= 7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+; fvar(2):= 7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+;          7500 - Flying Screen Effect (Vs series feature, Aerial Rave Only) - by FerchogtX
+; fvar(5):= 420 - Crouching strong punch
+;          751 - Alpha Counter
+;          752 - Alpha Counter Crouching
+;          -3
+;          3000 - HYPER 1
+;          -3
+;fvar(10):= -2
+;fvar(12):= -2
+

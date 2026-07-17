@@ -1,0 +1,72 @@
+      *-----Cosmic Creation-----*
+
+Superman by Jmaxximus & ELECTR0
+
+Superman Voiced by HyperVoiceActing
+
+Version date : 12/9/2018
+
+-------------------------Move List------------------
+
+------Hyper Combos---------
+
+Meteor Smasher : F, D, F + two punch buttons. 
+
+Kryptonian Crusher : D, DB, B + two punch buttons. 
+
+Heat Vision : D, DF, F + two punch buttons. (Can be done in air)
+
+Up in the clouds, it's a bird, it's a plane, no it's Superman! : D, DF, F + two kick buttons (In Air)
+
+Faster than a speeding bullet : Charge back, forward + two kick buttons.
+
+Deep Freeze : D, F + two kick buttons.
+
+Solar Annihilation : D, DB, B + two kick buttons. (Below 100% health)
+
+------Special Moves--------
+
+Heat Vision : D, DF, F + punch
+
+Cold breath : D, DF, F + kick (Not used while Electric Superman)
+
+Soaring Justice : F, D, F + punch
+
+Super Speed : Charge back, forward + kick
+
+Solar energy release : D, DB, B + kick (Below 100% health)
+
+-------------------Credit------------------------
+
+Jmaxximus - Superman sprite sheet
+
+Electro - Code, moveset & smart palette.
+
+HyperVoiceActing - Superman's voice
+
+Kong - Cyberbot, Marvel sprite rips & Cyclops hyper beam FX/code.
+
+Doomsday voice rip by Chimoru.
+
+Verz36 for help with some FX.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

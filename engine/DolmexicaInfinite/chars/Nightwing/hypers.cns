@@ -1,0 +1,53 @@
+;================================================================================================
+;================================================================================================
+;                                            HYPER ATTACKS
+;================================================================================================
+;================================================================================================
+;HYPER 1
+[Statedef 3000]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+anim = 3000
+ctrl = 0
+sprpriority = 1
+
+[State 3000, Reset DHC]
+type= varset
+trigger1= var(57)
+trigger1= AnimelemTime(5)<0
+var(57)= 0
+
+[State 3000, Corner Push]
+type= varset
+trigger1= fvar(5)
+trigger1= 1
+fvar(5)= 0
+
+[State 3000]
+type=SuperPause
+trigger1=AnimElem=4,=8
+time=45
+anim=s6050
+sound=S2000,0
+pos=32,-66
+movetime=2
+poweradd=-1000
+
+[State 3000]
+type=PosSet
+trigger1=1
+y=0
+
+[State 3000]
+type=NotHitBy
+Trigger1=animelemtime(4)>=7 && animelemtime(7)<0
+value=SCA
+Time=1
+
+[State 3000]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1

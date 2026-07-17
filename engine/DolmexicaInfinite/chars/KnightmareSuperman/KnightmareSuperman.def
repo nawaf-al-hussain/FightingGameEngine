@@ -1,0 +1,29 @@
+
+
+[Info]
+name ="Knightmare_Superman"
+displayname ="KNIGHTMARE SUPERMAN"
+versiondate =12,21,2018
+mugenversion =1.0
+author ="ELECTR0 & Jmaxximus"
+;localcoord = 427,240
+pal.defaults =1,2,3,4,5,6,7,8,9,10,11,12
+
+[Files]
+sprite =Ultimate_Superman.sff
+anim =Ultimate_Superman.air
+sound =Ultimate_Superman.snd
+cmd =Ultimate_Superman.cmd
+cns =Ultimate_Superman.cns
+stcommon =common1.cns
+st =Ultimate_Superman.cns
+pal1=16-JLSnyder.act
+pal2=ReevesEvil.act
+pal3=HeraldOfGalactus.act
+pal4=ElectricRed.act
+pal4=RedSon.act
+
+
+[Arcade]
+intro.storyboard =
+ending.storyboard =
