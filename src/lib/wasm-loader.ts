@@ -20,6 +20,8 @@ export interface GameInstance {
       argTypes: string[]
     ) => (...args: unknown[]) => unknown;
     _setExternalPlayerInput: (playerIndex: number, inputStr: string) => void;
+    _disableExternalInput: (playerIndex: number) => void;
+    _isExternalInputActive: (playerIndex: number) => number;
     canvas: HTMLCanvasElement | null;
   };
 }
@@ -76,6 +78,17 @@ export function keyboardToInputString(activeKeys: Set<string>): string {
  * /game/ regardless of the current page URL. Without this, the loader uses
  * page-relative paths and 404s when the page isn't at the site root.
  *
+ * FIX-PRELOAD: Wraps FS_preloadFile to wait for WASM compilation
+ * (Module._main being exposed) before processing. The Emscripten
+ * file_packager IIFE runs at script eval, kicks off a fetch. If the
+ * fetch resolves before WASM compilation completes, FS_preloadFile is
+ * called before HEAP8 is set, causing MEMFS write to crash with
+ * "Cannot read properties of undefined (reading 'buffer')".
+ * Module._main is set inside receiveInstance, AFTER updateMemoryViews
+ * sets HEAP8, so waiting for _main guarantees HEAP8 is ready. No
+ * deadlock: FS_preloadFile doesn't depend on runDependencies, and
+ * run() awaits runDependencies which includes 'datafile_...'.
+ *
  * Usage: call this BEFORE dynamically loading game.js script tag.
  * Returns a Promise that resolves once the WASM runtime is fully initialized.
  */
@@ -105,6 +118,48 @@ export function loadGameEngine(): Promise<GameInstance> {
         resolve({ Module: module } as GameInstance);
       },
     };
+
+    // Create a WASM-ready promise that FS_preloadFile can wait on.
+    // Resolves when Module._main is exposed (set inside assignWasmExports,
+    // called from receiveInstance, BEFORE run()). At that point HEAP8 is set.
+    const wasmReady = new Promise<void>((resolveWasm) => {
+      const checkInterval = setInterval(() => {
+        const m = w.Module as { _main?: unknown } | undefined;
+        if (m && typeof m._main === "function") {
+          clearInterval(checkInterval);
+          resolveWasm();
+        }
+      }, 5);
+      setTimeout(() => clearInterval(checkInterval), 30000);
+    });
+
+    // FIX-PRELOAD: Patch FS_preloadFile to wait for WASM compilation.
+    // The file_packager IIFE runs at script eval, kicks off a fetch.
+    // If the fetch resolves before WASM compilation completes, FS_preloadFile
+    // is called before HEAP8 is set, causing MEMFS write to crash with
+    // "Cannot read properties of undefined (reading 'buffer')".
+    // By waiting for Module._main (which is set in receiveInstance, AFTER
+    // updateMemoryViews), we guarantee HEAP8 is initialized before any
+    // preload write happens. No deadlock: FS_preloadFile doesn't depend
+    // on runDependencies, and run() awaits runDependencies which includes
+    // the 'datafile_...' dependency added by runWithFS.
+    const patchInterval = setInterval(() => {
+      const M = w.Module as
+        | (Record<string, unknown> & { FS_preloadFile?: (...args: unknown[]) => Promise<unknown> })
+        | undefined;
+      if (!M || typeof M.FS_preloadFile !== "function" || (M as { _fsPreloadPatched?: boolean })._fsPreloadPatched) {
+        return;
+      }
+      const orig = M.FS_preloadFile;
+      (M as { _fsPreloadPatched?: boolean })._fsPreloadPatched = true;
+
+      M.FS_preloadFile = async (...args: unknown[]) => {
+        await wasmReady;
+        return orig.apply(M, args);
+      };
+      clearInterval(patchInterval);
+    }, 5);
+    setTimeout(() => clearInterval(patchInterval), 30000);
   });
 }
 

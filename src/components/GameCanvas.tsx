@@ -3,15 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import { loadGameEngine, type GameInstance } from "@/lib/wasm-loader";
 
+interface GameCanvasProps {
+  /** Called once when the WASM engine has finished initializing */
+  onReady?: (game: GameInstance) => void;
+}
+
 /**
  * GameCanvas — renders the Emscripten WASM game inside a canvas element.
  *
  * The game.js loader script creates the canvas and initializes SDL.
  * We dynamically load game.js, which sets up Module and attaches
  * the canvas to the DOM.
+ *
+ * The canvas element has id="canvas" (NOT "game-canvas") because Emscripten's
+ * SDL2 module looks for `document.getElementById('canvas')` as its default
+ * rendering target. Setting Module.canvas also works; we do both for safety.
  */
-export default function GameCanvas() {
+export default function GameCanvas({ onReady }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const gameRef = useRef<GameInstance | null>(null);
@@ -23,6 +33,15 @@ export default function GameCanvas() {
     async function init() {
       try {
         setStatus("loading");
+
+        // Set Module.canvas BEFORE loading game.js so SDL2 finds it.
+        // Emscripten's SDL2 module looks for Module.canvas first, then
+        // falls back to document.getElementById('canvas').
+        if (canvasRef.current) {
+          const w = window as unknown as { Module?: { canvas?: HTMLCanvasElement } };
+          if (!w.Module) w.Module = {} as { canvas?: HTMLCanvasElement };
+          w.Module.canvas = canvasRef.current;
+        }
 
         // FIX-2: Set up the onRuntimeInitialized callback BEFORE loading
         // game.js. Emscripten picks up window.Module if set before the script
@@ -49,6 +68,7 @@ export default function GameCanvas() {
           if (destroyed) return;
           gameRef.current = game;
           setStatus("ready");
+          onReady?.(game);
         } catch (e) {
           if (!destroyed) {
             setError((e as Error).message);
@@ -68,7 +88,7 @@ export default function GameCanvas() {
     return () => {
       destroyed = true;
     };
-  }, []);
+  }, [onReady]);
 
   return (
     <div ref={containerRef} className="game-container">
@@ -88,9 +108,11 @@ export default function GameCanvas() {
         </div>
       )}
 
-      {/* Emscripten appends its own canvas to the body or a target element */}
+      {/* Canvas with id="canvas" — what Emscripten/SDL2 looks for by default.
+          We also set Module.canvas to this element in init() for redundancy. */}
       <canvas
-        id="game-canvas"
+        ref={canvasRef}
+        id="canvas"
         className="game-canvas"
         style={{ display: status === "ready" ? "block" : "none" }}
       />

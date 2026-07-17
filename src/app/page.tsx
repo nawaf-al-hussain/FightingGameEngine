@@ -1,10 +1,5 @@
-import "./styles/game.css";
-import GameCanvas from "@/components/GameCanvas";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main className="game-page">
-      <GameCanvas />
-    </main>
-  );
+  redirect("/lobby");
 }
