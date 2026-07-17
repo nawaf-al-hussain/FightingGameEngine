@@ -37,15 +37,17 @@ fi
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
 # Common flags — based on Prism Makefile.commonweb
+# Note: -O1 instead of -O2 to reduce memory usage during compilation
+# (system has 4GB cgroup limit; -O2 causes OOM kills on larger files)
 PRISM_FLAGS="-s WASM=1 -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2"
 PRISM_FLAGS="$PRISM_FLAGS --use-port=sdl2_image:formats=png"
-PRISM_FLAGS="$PRISM_FLAGS -std=c++17 -fpermissive -O2"
+PRISM_FLAGS="$PRISM_FLAGS -std=c++17 -fpermissive -O1 -g0"
 PRISM_FLAGS="$PRISM_FLAGS -I$PRISM_DIR/include"
 
 DOLMEXICA_FLAGS="$PRISM_FLAGS"
 DOLMEXICA_FLAGS="$DOLMEXICA_FLAGS -I$ENGINE_DIR"
 
-LINK_FLAGS="-s WASM=1 -O2"
+LINK_FLAGS="-s WASM=1 -O1"
 LINK_FLAGS="$LINK_FLAGS -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2"
 LINK_FLAGS="$LINK_FLAGS --use-port=sdl2_image:formats=png"
 LINK_FLAGS="$LINK_FLAGS -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=1"
@@ -53,7 +55,6 @@ LINK_FLAGS="$LINK_FLAGS -s CASE_INSENSITIVE_FS=1 -s FORCE_FILESYSTEM=1"
 LINK_FLAGS="$LINK_FLAGS -s TOTAL_MEMORY=402653184"
 LINK_FLAGS="$LINK_FLAGS -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"
 LINK_FLAGS="$LINK_FLAGS -s EXPORTED_FUNCTIONS=[_setExternalPlayerInput,_disableExternalInput,_isExternalInputActive,_main]"
-LINK_FLAGS="$LINK_FLAGS -s SDL2_IMAGE_FORMATS='[\"png\"]'"
 
 # =============================================================================
 # STEP 1: Build Prism
@@ -63,7 +64,8 @@ echo "=== [1/4] Building Prism library ==="
 cd "$PRISM_DIR"
 
 # Core Prism sources (flat in repo root)
-PRISM_SRC=$(ls *.cpp 2>/dev/null | grep -v test | sort)
+# EXCLUDE soundeffect.cpp — it's replaced by web/soundeffect_web.cpp (SDL_mixer)
+PRISM_SRC=$(ls *.cpp 2>/dev/null | grep -v test | grep -v '^soundeffect\.cpp$' | sort)
 PRISM_COUNT=$(echo "$PRISM_SRC" | wc -w)
 
 echo "  Compiling $PRISM_COUNT Prism source files..."
@@ -71,6 +73,12 @@ echo "  Compiling $PRISM_COUNT Prism source files..."
 PRISM_OBJS=""
 for f in $PRISM_SRC; do
     base=$(basename "$f" .cpp)
+    # Resume support: skip if .o already exists and is newer than .cpp
+    if [ -f "$BUILD_DIR/prism_${base}.o" ] && [ "$BUILD_DIR/prism_${base}.o" -nt "$f" ]; then
+        echo "    $f (cached)"
+        PRISM_OBJS="$PRISM_OBJS $BUILD_DIR/prism_${base}.o"
+        continue
+    fi
     echo "    $f"
     if ! em++ $PRISM_FLAGS -c "$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
         echo "  ERROR compiling $f — see above"
@@ -98,6 +106,12 @@ for f in \
     windows/romdisk_win.cpp; do
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
+        # Resume support: skip if .o already exists and is newer than .cpp
+        if [ -f "$BUILD_DIR/prism_${base}.o" ] && [ "$BUILD_DIR/prism_${base}.o" -nt "$PRISM_DIR/$f" ]; then
+            echo "    $f (cached, platform)"
+            WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
+            continue
+        fi
         echo "    $f (platform)"
         if ! em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
             echo "  ERROR compiling $f — see above"
@@ -116,6 +130,12 @@ for f in \
     web/zstd_stub.cpp; do
     if [ -f "$PRISM_DIR/$f" ]; then
         base=$(basename "$f" .cpp)
+        # Resume support
+        if [ -f "$BUILD_DIR/prism_${base}.o" ] && [ "$BUILD_DIR/prism_${base}.o" -nt "$PRISM_DIR/$f" ]; then
+            echo "    $f (cached, web)"
+            WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
+            continue
+        fi
         echo "    $f (web)"
         if ! em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1; then
             echo "  ERROR compiling $f — see above"
@@ -143,10 +163,11 @@ echo "  Compiling $DOLMEXICA_COUNT Dolmexica files..."
 
 DOLMEXICA_OBJS=""
 for f in $DOLMEXICA_SRC; do
-    # Skip files already compiled as web-specific
     base=$(basename "$f" .cpp)
-    if [ -f "$BUILD_DIR/dolmexica_${base}.o" ]; then
-        echo "    $f (skip, already built as web)"
+    # Resume support: skip if .o already exists and is newer than .cpp
+    if [ -f "$BUILD_DIR/dolmexica_${base}.o" ] && [ "$BUILD_DIR/dolmexica_${base}.o" -nt "$f" ]; then
+        echo "    $f (cached)"
+        DOLMEXICA_OBJS="$DOLMEXICA_OBJS $BUILD_DIR/dolmexica_${base}.o"
         continue
     fi
     echo "    $f"
@@ -215,7 +236,7 @@ fi
 
 if [ -n "$PRELOAD_FLAGS" ]; then
     echo "  Running file_packager..."
-    EMSCRIPTEN_ROOT="$(emcc --print-emcc-path | sed 's|/emcc$||')"
+    EMSCRIPTEN_ROOT="$(dirname "$(which emcc)")"
     python3 "$EMSCRIPTEN_ROOT/tools/file_packager.py" \
         "$BUILD_DIR/game.data" \
         --use-preload-plugins \
