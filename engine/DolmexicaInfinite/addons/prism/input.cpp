@@ -40,18 +40,6 @@ namespace prism {
                 }
         }
 
-        // Apply remote input overlay after normal flank update
-        static void applyExternalInputOverlay() {
-                for (int i = 0; i < MAXIMUM_CONTROLLER_AMOUNT; i++) {
-                        if (!gExternalInput.mIsActive[i]) continue;
-
-                        uint8_t mask = gExternalInput.mRemoteButtons[i];
-                        for (int b = 0; b < CONTROLLER_BUTTON_AMOUNT_PRISM; b++) {
-                                gPrismGeneralInputData.mStatus[i].mCurrent[b] = (mask >> b) & 1;
-                        }
-                }
-        }
-
         typedef struct InputStatus_t {
                 uint8_t mPrev[CONTROLLER_BUTTON_AMOUNT_PRISM];
                 uint8_t mCurrent[CONTROLLER_BUTTON_AMOUNT_PRISM];
@@ -556,6 +544,18 @@ namespace prism {
                         updateInputFlagSingle(&gPrismGeneralInputData.mStatus[i].mShotPrev, &gPrismGeneralInputData.mStatus[i].mShotCurrent, hasShotGunSingle(i));
                         updateInputFlagSingle(&gPrismGeneralInputData.mStatus[i].mMousePrev[MOUSE_LEFT_BUTTON_PRISM], &gPrismGeneralInputData.mStatus[i].mMouseCurrent[MOUSE_LEFT_BUTTON_PRISM], hasPressedMouseLeftSingle(i));
                         updateInputFlagSingle(&gPrismGeneralInputData.mStatus[i].mMousePrev[MOUSE_RIGHT_BUTTON_PRISM], &gPrismGeneralInputData.mStatus[i].mMouseCurrent[MOUSE_RIGHT_BUTTON_PRISM], hasPressedMouseRightSingle(i));
+                }
+        }
+
+        // Apply remote input overlay after normal flank update
+        static void applyExternalInputOverlay() {
+                for (int i = 0; i < MAXIMUM_CONTROLLER_AMOUNT; i++) {
+                        if (!gExternalInput.mIsActive[i]) continue;
+
+                        uint8_t mask = gExternalInput.mRemoteButtons[i];
+                        for (int b = 0; b < CONTROLLER_BUTTON_AMOUNT_PRISM; b++) {
+                                gPrismGeneralInputData.mStatus[i].mCurrent[b] = (mask >> b) & 1;
+                        }
                 }
         }
 

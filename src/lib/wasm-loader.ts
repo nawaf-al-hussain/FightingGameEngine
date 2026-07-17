@@ -89,13 +89,38 @@ export async function loadGameEngine(): Promise<GameInstance> {
   );
 }
 
-/** Inject a remote player's input into the WASM engine */
+/** Inject a remote player's input into the WASM engine.
+ * @param game The loaded GameInstance
+ * @param controllerIndex 0 = Player 1, 1 = Player 2
+ * @param inputString MUGEN input string (e.g. "Fa", "DBz", "")
+ */
 export function injectRemoteInput(
   game: GameInstance,
-  playerIndex: number, // 1 or 2
+  controllerIndex: number, // 0 = P1, 1 = P2
   inputString: string
 ): void {
   if (game.Module._setExternalPlayerInput) {
-    game.Module._setExternalPlayerInput(playerIndex, inputString);
+    game.Module._setExternalPlayerInput(controllerIndex, inputString);
   }
+}
+
+/** Revert a player to local keyboard input */
+export function disableRemoteInput(
+  game: GameInstance,
+  controllerIndex: number
+): void {
+  if (game.Module._disableExternalInput) {
+    game.Module._disableExternalInput(controllerIndex);
+  }
+}
+
+/** Check if a player is using remote input */
+export function isRemoteInputActive(
+  game: GameInstance,
+  controllerIndex: number
+): boolean {
+  if (game.Module._isExternalInputActive) {
+    return game.Module._isExternalInputActive(controllerIndex) === 1;
+  }
+  return false;
 }
