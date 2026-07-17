@@ -2,23 +2,6 @@
 # =============================================================================
 # build-wasm.sh — Build Dolmexica Infinite to WebAssembly
 # =============================================================================
-#
-# Prerequisites:
-#   - Emscripten SDK 6.0.3+ activated (source /path/to/emsdk_env.sh)
-#   - Engine source at engine/DolmexicaInfinite/
-#   - Prism addon at engine/DolmexicaInfinite/addons/prism/ (develop branch)
-#
-# Usage:
-#   bash scripts/build-wasm.sh           # Incremental build
-#   bash scripts/build-wasm.sh --clean   # Full clean rebuild
-#   bash scripts/build-wasm.sh --prism   # Only rebuild Prism library
-#
-# Output:
-#   public/game/game.wasm   — WebAssembly binary
-#   public/game/game.js     — Emscripten loader script
-#   public/game/game.data   — Preloaded assets (if chars/ exists)
-# =============================================================================
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,158 +11,213 @@ PRISM_DIR="$ENGINE_DIR/addons/prism"
 BUILD_DIR="$PROJECT_ROOT/build/wasm"
 OUTPUT_DIR="$PROJECT_ROOT/public/game"
 
-# Ensure emsdk is available
+source /home/z/emsdk/emsdk_env.sh 2>/dev/null || true
+
 if ! command -v emcc &>/dev/null; then
-    echo "ERROR: emcc not found. Activate Emscripten SDK first:"
-    echo "  source /path/to/emsdk_env.sh"
+    echo "ERROR: emcc not found."
     exit 1
 fi
 
 echo "=== Emscripten $(emcc --version | head -1) ==="
 
-# Flags
 CLEAN=0
-PRISM_ONLY=0
 for arg in "$@"; do
-    case "$arg" in
-        --clean)   CLEAN=1 ;;
-        --prism)   PRISM_ONLY=1 ;;
-    esac
+    case "$arg" in --clean) CLEAN=1 ;; esac
 done
+
+if [ $CLEAN -eq 1 ]; then
+    echo "=== Cleaning ==="
+    rm -rf "$BUILD_DIR" "$OUTPUT_DIR"
+fi
 
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
-# Common Emscripten flags
-EMFLAGS_COMMON="-s WASM=1 -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 --use-port=sdl2_image:formats=png"
-EMFLAGS_COMMON="$EMFLAGS_COMMON -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2"
-EMFLAGS_COMMON="$EMFLAGS_COMMON -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=0"
-EMFLAGS_COMMON="$EMFLAGS_COMMON -O2 -s USE_PTHREADS=0"
+# Common flags — based on Prism Makefile.commonweb
+PRISM_FLAGS="-s WASM=1 -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2"
+PRISM_FLAGS="$PRISM_FLAGS --use-port=sdl2_image:formats=png"
+PRISM_FLAGS="$PRISM_FLAGS -std=c++17 -fpermissive -O2"
+PRISM_FLAGS="$PRISM_FLAGS -I$PRISM_DIR/include"
+
+DOLMEXICA_FLAGS="$PRISM_FLAGS"
+DOLMEXICA_FLAGS="$DOLMEXICA_FLAGS -I$ENGINE_DIR"
+
+LINK_FLAGS="-s WASM=1 -O2"
+LINK_FLAGS="$LINK_FLAGS -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2"
+LINK_FLAGS="$LINK_FLAGS --use-port=sdl2_image:formats=png"
+LINK_FLAGS="$LINK_FLAGS -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=1"
+LINK_FLAGS="$LINK_FLAGS -s CASE_INSENSITIVE_FS=1 -s FORCE_FILESYSTEM=1"
+LINK_FLAGS="$LINK_FLAGS -s TOTAL_MEMORY=402653184"
+LINK_FLAGS="$LINK_FLAGS -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"
+LINK_FLAGS="$LINK_FLAGS -s SDL2_IMAGE_FORMATS='[\"png\"]'"
 
 # =============================================================================
-# STEP 1: Build Prism Library
+# STEP 1: Build Prism
 # =============================================================================
-build_prism() {
-    echo ""
-    echo "=== [1/4] Building Prism library ==="
-    cd "$PRISM_DIR"
+echo ""
+echo "=== [1/4] Building Prism library ==="
+cd "$PRISM_DIR"
 
-    # Core Prism sources
-    PRISM_CORE_SRC=$(find src/ -name '*.cpp' 2>/dev/null | grep -v test | sort)
-    # Windows platform files (SDL-based, cross-platform compatible)
-    PRISM_WIN_SRC=""
-    for f in \
-        src/drawing/drawing_win.cpp \
-        src/input/input_win.cpp \
-        src/system/system_win.cpp \
-        src/util/graphics/graphics_win.cpp \
-        src/util/timer/timer_win.cpp \
-        src/util/input/input_win.cpp \
-        src/util/debug/debug_win.cpp \
-        src/util/backup/backup_win.cpp \
-        src/util/thread/thread_win.cpp \
-        src/util/audio/audio_win.cpp \
-        src/util/audio/audio_cd_win.cpp \
-        src/util/audio/audio_sound_win.cpp \
-        src/util/audio/audio_music_win.cpp \
-        src/util/audio/audio_sound_effect_win.cpp \
-        src/util/network/network_win.cpp; do
-        if [ -f "$f" ]; then
-            PRISM_WIN_SRC="$PRISM_WIN_SRC $f"
-        fi
-    done
+# Core Prism sources (flat in repo root)
+PRISM_SRC=$(ls *.cpp 2>/dev/null | grep -v test | sort)
+PRISM_COUNT=$(echo "$PRISM_SRC" | wc -w)
 
-    # Web sound replacements (SDL_mixer instead of FMOD)
-    PRISM_WEB_SRC=""
-    for f in web/sound_web.cpp web/soundeffect_web.cpp; do
-        if [ -f "$f" ]; then
-            PRISM_WEB_SRC="$PRISM_WEB_SRC $f"
-        fi
-    done
+echo "  Compiling $PRISM_COUNT Prism source files..."
 
-    ALL_PRISM_SRC="$PRISM_CORE_SRC $PRISM_WIN_SRC $PRISM_WEB_SRC"
+PRISM_OBJS=""
+for f in $PRISM_SRC; do
+    base=$(basename "$f" .cpp)
+    echo "    $f"
+    em++ $PRISM_FLAGS -c "$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+    PRISM_OBJS="$PRISM_OBJS $BUILD_DIR/prism_${base}.o"
+done
 
-    echo "  Compiling Prism ($(echo "$ALL_PRISM_SRC" | wc -w) files)..."
-    em++ $EMFLAGS_COMMON -I include/ -c $ALL_PRISM_SRC -o "$BUILD_DIR/"
+# Windows platform files (SDL-based, cross-platform)
+WIN_FILES=""
+for f in \
+    windows/drawing_win.cpp \
+    windows/input_win.cpp \
+    windows/system_win.cpp \
+    windows/file_win.cpp \
+    windows/math_win.cpp \
+    windows/memoryhandler_win.cpp \
+    windows/log_win.cpp \
+    windows/texture_win.cpp \
+    windows/thread_win.cpp \
+    windows/screeneffect_win.cpp \
+    windows/framerateselect_win.cpp; do
+    if [ -f "$PRISM_DIR/$f" ]; then
+        base=$(basename "$f" .cpp)
+        echo "    $f (platform)"
+        em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+        WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
+    fi
+done
 
-    echo "  Archiving libprism.a..."
-    ar rcs "$BUILD_DIR/libprism.a" "$BUILD_DIR"/*.o
-    rm -f "$BUILD_DIR"/*.o
+# Web sound replacements (SDL_mixer)
+for f in web/sound_web.cpp web/soundeffect_web.cpp; do
+    if [ -f "$PRISM_DIR/$f" ]; then
+        base=$(basename "$f" .cpp)
+        echo "    $f (web audio)"
+        em++ $PRISM_FLAGS -c "$PRISM_DIR/$f" -o "$BUILD_DIR/prism_${base}.o" 2>&1 | grep -i "error" || true
+        WIN_FILES="$WIN_FILES $BUILD_DIR/prism_${base}.o"
+    fi
+done
 
-    echo "  ✓ Prism built: $(du -h "$BUILD_DIR/libprism.a" | cut -f1)"
-}
+# Web-specific Dolmexica files
+for f in \
+    web/netplay_web.cpp \
+    web/run.cpp \
+    web/thread_web.cpp \
+    web/windowfocusscreen_web.cpp; do
+    if [ -f "$ENGINE_DIR/$f" ]; then
+        base=$(basename "$f" .cpp)
+        echo "    $f (dolmexica web)"
+        em++ $DOLMEXICA_FLAGS -c "$ENGINE_DIR/$f" -o "$BUILD_DIR/dolmexica_${base}.o" 2>&1 | grep -i "error" || true
+        WIN_FILES="$WIN_FILES $BUILD_DIR/dolmexica_${base}.o"
+    fi
+done
+
+echo "  Archiving libprism.a..."
+ar rcs "$BUILD_DIR/libprism.a" $PRISM_OBJS $WIN_FILES
+echo "  ✓ Prism: $(du -h "$BUILD_DIR/libprism.a" | cut -f1)"
 
 # =============================================================================
 # STEP 2: Build Dolmexica
 # =============================================================================
-build_dolmexica() {
-    echo ""
-    echo "=== [2/4] Building Dolmexica ==="
-    cd "$ENGINE_DIR"
+echo ""
+echo "=== [2/4] Building Dolmexica ==="
+cd "$ENGINE_DIR"
 
-    DOLMEXICA_SRC=$(find src/ -name '*.cpp' 2>/dev/null | grep -v test | sort)
+DOLMEXICA_SRC=$(ls *.cpp 2>/dev/null | grep -v test | sort)
+DOLMEXICA_COUNT=$(echo "$DOLMEXICA_SRC" | wc -w)
 
-    echo "  Compiling Dolmexica ($(echo "$DOLMEXICA_SRC" | wc -w) files)..."
-    em++ $EMFLAGS_COMMON \
-        -I "$PRISM_DIR/include" \
-        -I include/ \
-        -c $DOLMEXICA_SRC \
-        -o "$BUILD_DIR/"
+echo "  Compiling $DOLMEXICA_COUNT Dolmexica files..."
 
-    echo "  Linking..."
-    em++ $EMFLAGS_COMMON \
-        "$BUILD_DIR"/*.o \
-        "$BUILD_DIR/libprism.a" \
-        -o "$BUILD_DIR/game.js" \
-        --preload-file "$ENGINE_DIR/data@/data" \
-        2>&1 | tail -5 || true
-
-    echo "  ✓ Dolmexica linked"
-}
-
-# =============================================================================
-# STEP 3: Package Assets
-# =============================================================================
-build_assets() {
-    echo ""
-    echo "=== [3/4] Packaging assets ==="
-
-    CHARS_DIR="$ENGINE_DIR/chars"
-    if [ -d "$CHARS_DIR" ] && [ "$(ls -A "$CHARS_DIR" 2>/dev/null)" ]; then
-        echo "  Bundling characters from $CHARS_DIR..."
-        # Use file_packager to create the .data file
-        python3 "$(emcc --print-emcc-path 2>/dev/null | sed 's|/emcc$||')/tools/file_packager.py" \
-            "$BUILD_DIR/game.data" \
-            --preload "$CHARS_DIR@/chars" \
-            --js-output="$BUILD_DIR/game.assets.js" \
-            2>&1 | tail -3 || echo "  (file_packager not found, skipping asset bundling)"
-    else
-        echo "  No chars/ directory found — skipping asset bundling"
-        echo "  (WASM will show a blank screen without characters)"
+DOLMEXICA_OBJS=""
+for f in $DOLMEXICA_SRC; do
+    # Skip files already compiled as web-specific
+    base=$(basename "$f" .cpp)
+    if [ -f "$BUILD_DIR/dolmexica_${base}.o" ]; then
+        echo "    $f (skip, already built as web)"
+        continue
     fi
-}
+    echo "    $f"
+    em++ $DOLMEXICA_FLAGS -c "$f" -o "$BUILD_DIR/dolmexica_${base}.o" 2>&1 | grep -i "error" || true
+    DOLMEXICA_OBJS="$DOLMEXICA_OBJS $BUILD_DIR/dolmexica_${base}.o"
+done
 
 # =============================================================================
-# STEP 4: Copy Artifacts
+# STEP 3: Link
 # =============================================================================
-copy_artifacts() {
-    echo ""
-    echo "=== [4/4] Copying to $OUTPUT_DIR ==="
+echo ""
+echo "=== [3/4] Linking WASM ==="
 
-    cp -f "$BUILD_DIR/game.js" "$OUTPUT_DIR/" 2>/dev/null && echo "  ✓ game.js"
-    cp -f "$BUILD_DIR/game.wasm" "$OUTPUT_DIR/" 2>/dev/null && echo "  ✓ game.wasm"
-    cp -f "$BUILD_DIR/game.data" "$OUTPUT_DIR/" 2>/dev/null && echo "  ✓ game.data"
+ALL_OBJS="$BUILD_DIR/dolmexica_*.o $BUILD_DIR/prism_*.o"
 
-    # Generate a minimal index.html if needed
-    if [ ! -f "$OUTPUT_DIR/index.html" ]; then
-        cat > "$OUTPUT_DIR/index.html" <<'HTML'
+em++ $ALL_OBJS "$BUILD_DIR/libprism.a" \
+    $LINK_FLAGS \
+    -o "$BUILD_DIR/game.js" \
+    2>&1 | tail -10
+
+echo "  ✓ Linked: game.js + game.wasm"
+
+# =============================================================================
+# STEP 4: Package assets
+# =============================================================================
+echo ""
+echo "=== [4/4] Packaging assets ==="
+
+CHARS_DIR="$ENGINE_DIR/chars"
+DATA_DIR="$ENGINE_DIR/data"
+
+PRELOAD_FLAGS=""
+if [ -d "$DATA_DIR" ] && [ "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
+    PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $DATA_DIR@/data"
+    echo "  Including data/ directory"
+fi
+
+if [ -d "$CHARS_DIR" ] && [ "$(ls -A "$CHARS_DIR" 2>/dev/null)" ]; then
+    PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $CHARS_DIR@/chars"
+    echo "  Including chars/ directory"
+fi
+
+if [ -n "$PRELOAD_FLAGS" ]; then
+    echo "  Running file_packager..."
+    EMSCRIPTEN_ROOT="$(emcc --print-emcc-path | sed 's|/emcc$||')"
+    python3 "$EMSCRIPTEN_ROOT/tools/file_packager.py" \
+        "$BUILD_DIR/game.data" \
+        --use-preload-plugins \
+        $PRELOAD_FLAGS \
+        --js-output="$BUILD_DIR/game.assets.js" \
+        2>&1 | tail -5
+
+    # Merge the assets JS into the main game.js
+    cat "$BUILD_DIR/game.assets.js" >> "$BUILD_DIR/game.js"
+    echo "  ✓ Assets packaged: $(du -h "$BUILD_DIR/game.data" | cut -f1)"
+else
+    echo "  No assets to package"
+fi
+
+# =============================================================================
+# STEP 5: Copy artifacts
+# =============================================================================
+echo ""
+echo "=== [5/5] Copying to $OUTPUT_DIR ==="
+
+cp -f "$BUILD_DIR/game.js" "$OUTPUT_DIR/" && echo "  ✓ game.js ($(du -h "$OUTPUT_DIR/game.js" | cut -f1))"
+cp -f "$BUILD_DIR/game.wasm" "$OUTPUT_DIR/" && echo "  ✓ game.wasm ($(du -h "$OUTPUT_DIR/game.wasm" | cut -f1))"
+[ -f "$BUILD_DIR/game.data" ] && cp -f "$BUILD_DIR/game.data" "$OUTPUT_DIR/" && echo "  ✓ game.data ($(du -h "$OUTPUT_DIR/game.data" | cut -f1))"
+
+# Generate index.html
+cat > "$OUTPUT_DIR/index.html" <<'HTML'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Fighting Game Engine</title>
   <style>
-    body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    canvas { image-rendering: pixelated; }
+    body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   </style>
 </head>
 <body>
@@ -187,27 +225,10 @@ copy_artifacts() {
 </body>
 </html>
 HTML
-        echo "  ✓ index.html"
-    fi
+echo "  ✓ index.html"
 
-    echo ""
-    echo "=== Build Complete ==="
-    echo "Output files:"
-    ls -lh "$OUTPUT_DIR/" 2>/dev/null | grep -v total
-}
-
-# =============================================================================
-# Main
-# =============================================================================
-if [ $CLEAN -eq 1 ]; then
-    echo "=== Cleaning build directory ==="
-    rm -rf "$BUILD_DIR"/* "$OUTPUT_DIR"/*
-fi
-
-build_prism
-
-if [ $PRISM_ONLY -eq 0 ]; then
-    build_dolmexica
-    build_assets
-    copy_artifacts
-fi
+echo ""
+echo "=== Build Complete ==="
+ls -lh "$OUTPUT_DIR/" | grep -v total
+echo ""
+echo "To test: python3 -m http.server 8080 -d $OUTPUT_DIR"
