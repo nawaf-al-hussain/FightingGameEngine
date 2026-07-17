@@ -23,7 +23,7 @@ Browser-based 2D fighting game platform using **Dolmexica Infinite** (MUGEN inte
 | Layer | Technology | Cost |
 |-------|-----------|------|
 | Frontend | Next.js 14 + React 18 | Free (Vercel) |
-| Game Engine | Dolmexica Infinite → WASM (Emscripten 6.0.3) | Free |
+| Game Engine | Dolmexica Infinite → WASM (Emscripten 3.1.74) | Free |
 | WebSocket Relay | Deno Deploy | Free |
 | Database | Neon Serverless Postgres | Free tier |
 | Cache | Upstash Redis | Free tier |
@@ -56,8 +56,9 @@ Browser-based 2D fighting game platform using **Dolmexica Infinite** (MUGEN inte
 
 ### Prerequisites
 - Node.js 18+
-- Emscripten SDK 6.0.3+
+- Emscripten SDK 3.1.74+ (activate with `source /path/to/emsdk_env.sh`)
 - Python 3 (for asset validator)
+- Deno 1.40+ (for relay server, Phase 1.5+)
 
 ### Build Game Engine to WASM
 ```bash
@@ -79,20 +80,34 @@ npm run dev
 python3 tools/validate-mugen.py engine/DolmexicaInfinite/chars/KnightmareSuperman/KnightmareSuperman.def
 ```
 
-## Included Characters
+## Character Roster
+
+### Bundled in `game.data` (Phase 1)
+
+Only small characters are bundled to keep first-load under ~10MB (essential for Bangladesh mobile data).
+
+| Character | Size | Source |
+|-----------|------|--------|
+| Songoku | ~4 MB | bundled with engine |
+| TBD (small character) | <5 MB | user-provided |
+
+### Available via R2 on-demand streaming (Phase 1.5+)
+
+Larger characters are fetched from Cloudflare R2 when selected in the lobby, then written into Emscripten MEMFS via `Module.FS.writeFile()`. See `docs/deep-dives/03-asset-pipeline.md`.
 
 | Character | Size | Source |
 |-----------|------|--------|
 | Knightmare Superman | ~69 MB | tmpfiles.org |
 | Nightwing (O Illusionista) | ~30 MB | tmpfiles.org |
-| Songoku | ~4 MB | bundled with engine |
 
 ## Key Technical Details
 
-- **Lockstep netcode**: Both players run local WASM instances; relay only forwards inputs
+- **Netcode**: Phase 1 = local only (no network). Phase 1.5 = input-delay lockstep + GGPO-style rollback. See `docs/deep-dives/05-rollback-netcode.md`.
+- **Threading**: Single-threaded build (`thread_web.cpp` runs synchronously). No `SharedArrayBuffer` / COOP/COEP headers needed.
 - **FMOD replacement**: Proprietary FMOD audio replaced with open-source SDL_mixer (web/ implementations)
 - **Mobile support**: Virtual D-pad + 5 action buttons with multi-touch
-- **Emscripten 6.0.3**: Uses `--use-port=sdl2_image:formats=png` (not the old `-s SDL2_IMAGE_FORMATS` flag)
+- **Emscripten 3.1.74**: Uses `--use-port=sdl2_image:formats=png` (not the old `-s SDL2_IMAGE_FORMATS` flag)
+- **Database**: In-memory relay only for Phase 1 / 1.5. Neon Postgres added in Phase 3.
 
 ## License
 
