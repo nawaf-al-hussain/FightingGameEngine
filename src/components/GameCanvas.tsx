@@ -109,12 +109,16 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
       )}
 
       {/* Canvas with id="canvas" — what Emscripten/SDL2 looks for by default.
-          We also set Module.canvas to this element in init() for redundancy. */}
+          We also set Module.canvas to this element in init() for redundancy.
+          Width/height are set explicitly so SDL2 can initialize even when
+          the canvas is display:none during loading. The engine's
+          setScreenSize(320, 240) will resize if needed. */}
       <canvas
         ref={canvasRef}
         id="canvas"
         className="game-canvas"
-        style={{ display: status === "ready" ? "block" : "none" }}
+        width={320}
+        height={240}
       />
     </div>
   );
