@@ -163,6 +163,7 @@
         },
         print: function(text) { log('[print] ' + text, 'info'); },
         printErr: function(text) { log('[printErr] ' + text, 'err'); },
+        noInitialRun: true,  // Prevent automatic _main() call — we call it manually
         onRuntimeInitialized: function () {
           clearTimeout(timeout);
           log('WASM runtime initialized', 'ok');
@@ -175,8 +176,10 @@
         },
         canvas: (() => {
           const c = document.createElement('canvas');
-          c.id = 'game-canvas';
+          c.id = 'canvas';
           c.width = 640; c.height = 480;
+          // Attach to DOM immediately — SDL2/WebGL requires canvas in DOM
+          document.getElementById('canvas-wrap').appendChild(c);
           return c;
         })(),
       };
@@ -239,15 +242,21 @@
 
       setStatus('READY', '');
 
-      // Move the Emscripten-created canvas into our wrap
-      const emCanvas = document.getElementById('canvas') ||
-                       document.querySelector('canvas');
+      // Canvas was already attached to DOM in Module setup
+      const emCanvas = document.getElementById('canvas');
       if (emCanvas) {
         canvasPlaceholder.style.display = 'none';
-        document.getElementById('canvas-wrap').appendChild(emCanvas);
-        log('Canvas attached to DOM', 'ok');
+        log('Canvas ready (id=canvas, ' + emCanvas.width + 'x' + emCanvas.height + ')', 'ok');
       } else {
         log('No canvas found — game may render to Module.canvas', 'err');
+      }
+
+      // Start the engine manually (noInitialRun = true above)
+      log('Starting engine (_main)...', 'info');
+      try {
+        Module._main();
+      } catch (e) {
+        log('Engine _main() threw: ' + e.message, 'err');
       }
 
       // Check P2 active status

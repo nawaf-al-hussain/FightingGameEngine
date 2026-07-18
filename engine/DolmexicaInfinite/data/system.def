@@ -25,7 +25,8 @@ localcoord = 320, 240
 ; scripts/generate-system-sff.py (6 PNG sprites in groups 100, 200, 201)
 spr = data/system.sff
 ; Sound file for system sounds
-snd = 
+; Empty SND file (0 sounds) — prevents crash when loading with no sounds
+snd = data/system.snd
 ; Logo storyboard (intro animation before title)
 ; Empty = skip logo
 logo.storyboard = 
@@ -37,12 +38,15 @@ select = data/select.def
 ; Fight screen definition (lifebars, hit sparks, etc.)
 fight = data/fight.def
 ; Fonts — MUGEN .fnt or .def files for text rendering
-; f-4x6.def is a TrueType font definition referencing Liberation Sans
-font = font/f-4x6.def
-; Additional fonts (font1, font2, ... can be added)
-font1 = font/f-4x6.def
-font2 = font/f-4x6.def
-font3 = font/f-4x6.def
+; Note: TrueType font loading via SDL_ttf causes a hard crash in the WASM
+; build. Leaving fonts empty — engine runs without text rendering.
+; The engine's error recovery catches the "No fonts loaded" abortSystem()
+; call and continues running (game loop survives).
+; TODO: investigate SDL_ttf crash — may need different TTF or font format.
+; font0 = font/f-4x6.def
+; font1 = font/f-4x6.def
+; font2 = font/f-4x6.def
+; font3 = font/f-4x6.def
 
 ; ============================================================================
 ; Screen Layouts

@@ -35,74 +35,76 @@ KOS_INIT_FLAGS(INIT_DEFAULT | INIT_MALLOCSTATS);
 #endif
 
 void exitGame() {
-	shutdownPrismWrapper();
+        shutdownPrismWrapper();
 
 #ifdef DEVELOP
-	if (isOnDreamcast()) {
-		abortSystem();
-	}
-	else {
-		returnToMenu();
-	}
+        if (isOnDreamcast()) {
+                abortSystem();
+        }
+        else {
+                returnToMenu();
+        }
 #else
-	returnToMenu();
+        returnToMenu();
 #endif
 }
 
 int main(int argc, char** argv) {
-	(void)argc;
-	(void)argv;
+        (void)argc;
+        (void)argv;
 
 #ifdef DEVELOP
-	setDevelopMode();
-	setMinimumLogType((isOnDreamcast() || isOnVita()) ? LOG_TYPE_NORMAL : LOG_TYPE_NORMAL);
+        setDevelopMode();
+        setMinimumLogType((isOnDreamcast() || isOnVita()) ? LOG_TYPE_NORMAL : LOG_TYPE_NORMAL);
 #else
-	setMinimumLogType(LOG_TYPE_NONE);
+        setMinimumLogType(LOG_TYPE_NONE);
 #endif
 
-	setGameName("DOLMEXICA INFINITE");
-	setScreenSize(320, 240);
+        setGameName("DOLMEXICA INFINITE");
+        setScreenSize(320, 240);
 
-	if (!isOnDreamcast()) {
-		setMugenSpriteFileReaderSubTextureSplit(8, 1024);
-	}
+        if (!isOnDreamcast()) {
+                setMugenSpriteFileReaderSubTextureSplit(8, 1024);
+        }
 
-	initPrismWrapperWithMugenFlags();
-	loadMugenConfig();
-	loadGlobalVariables(PrismSaveSlot::AMOUNT);
-	setFont("$/rd/fonts/segoe.hdr", "$/rd/fonts/segoe.pkg");
-	loadMugenSystemFonts();
-	logg("Check framerate");
-	FramerateSelectReturnType framerateReturnType = selectFramerate();
-	if (framerateReturnType == FRAMERATE_SCREEN_RETURN_ABORT) {
-		exitGame();
-	}
+        initPrismWrapperWithMugenFlags();
+        loadMugenConfig();
+        loadGlobalVariables(PrismSaveSlot::AMOUNT);
+        setFont("$/rd/fonts/segoe.hdr", "$/rd/fonts/segoe.pkg");
+        loadMugenSystemFonts();
+        logg("Check framerate");
+        FramerateSelectReturnType framerateReturnType = selectFramerate();
+        if (framerateReturnType == FRAMERATE_SCREEN_RETURN_ABORT) {
+                exitGame();
+        }
 
-	setMemoryHandlerCompressionActive();
-	initClipboardForGame();
-	setScreenEffectZ(99);
-	setMugenAnimationHandlerPixelCenter(Vector2D(0.0, 0.0));
-	setScreenAfterWrapperLogoScreen(getInitScreen());
-	
-#ifdef DEVELOP	
-	//setUnscaledGameWavVolume(0);
-	//setUnscaledGameMidiVolume(0);
+        setMemoryHandlerCompressionActive();
+        initClipboardForGame();
+        setScreenEffectZ(99);
+        setMugenAnimationHandlerPixelCenter(Vector2D(0.0, 0.0));
+        setScreenAfterWrapperLogoScreen(getInitScreen());
+        
+#ifdef DEVELOP
+        //setUnscaledGameWavVolume(0);
+        //setUnscaledGameMidiVolume(0);
 
-	if (isOnWindows())
-	{
-		//setDisplayedScreenSize(1356, 1017);
-		//setDisplayedScreenSize(320, 240);
-		//setScreenPosition(0, -1080); // TODO: move to user cfg
-	}
+        if (isOnWindows())
+        {
+                //setDisplayedScreenSize(1356, 1017);
+                //setDisplayedScreenSize(320, 240);
+                //setScreenPosition(0, -1080); // TODO: move to user cfg
+        }
 
-	disableWrapperErrorRecovery();
-	initDolmexicaDebug();
-	setDebugMinusCheckEnabled(1);
+        // Keep error recovery enabled for web build — allows engine to
+        // survive non-fatal crashes (missing sprites, font issues, etc.)
+        // disableWrapperErrorRecovery();
+        initDolmexicaDebug();
+        setDebugMinusCheckEnabled(1);
 #endif
 
-	startScreenHandling(getInitScreen());
-	
-	exitGame();
-	
-	return 0;
+        startScreenHandling(getInitScreen());
+        
+        exitGame();
+        
+        return 0;
 }
