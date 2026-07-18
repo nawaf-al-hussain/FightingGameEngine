@@ -151,28 +151,7 @@
 
     log('Initializing test harness', 'info');
 
-    // Debug: capture real console.error / console.warn into our log panel
-    ['log', 'info', 'warn', 'error'].forEach(level => {
-      const orig = console[level].bind(console);
-      console[level] = function(...args) {
-        try {
-          const text = args.map(a => typeof a === 'string' ? a : (typeof a === 'object' ? JSON.stringify(a).substring(0, 200) : String(a))).join(' ');
-          log('[' + level + '] ' + text, level === 'error' ? 'err' : (level === 'warn' ? 'info' : 'info'));
-        } catch (e) {}
-        orig(...args);
-      };
-    });
-    log('Console capture installed', 'info');
-
-    // ---------- FIX-2 pattern: configure Module BEFORE loading script ----------
-    // locateFile tells Emscripten where to find game.wasm and game.data —
-    // without it, the loader fetches them relative to the HTML page, which
-    // breaks when the page is in /test/ but assets are in /game/.
-    //
-    // FIX-PRELOAD: Patches FS_preloadFile to wait for HEAP8 to be initialized
-    // before processing. The Emscripten file_packager generates code that calls
-    // FS_preloadFile before HEAP8 is set, causing "Cannot read properties of
-    // undefined (reading 'buffer')" errors.
+    // ---------- FIX-2 + FIX-PRELOAD: configure Module BEFORE loading script ----------
     const runtimeReady = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('WASM runtime init timeout after 30s'));
@@ -202,43 +181,28 @@
         })(),
       };
 
-      // Create a runtime-ready promise that FS_preloadFile can wait on.
-      // This resolves when WASM has compiled (Module._main exists) — which
-      // happens BEFORE run() is called, so HEAP8 is set but onRuntimeInitialized
-      // hasn't fired yet. This is the safe window for FS_preloadFile to run.
-      window._wasmReady = new Promise((resolveWasm) => {
-        const checkInterval = setInterval(() => {
+      // FIX-PRELOAD: Wait for WASM compilation before FS_preloadFile runs.
+      // See wasm-loader.ts for full explanation.
+      const wasmReady = new Promise((resolveWasm) => {
+        const ci = setInterval(() => {
           if (window.Module && typeof window.Module._main === 'function') {
-            clearInterval(checkInterval);
+            clearInterval(ci);
             resolveWasm();
           }
         }, 5);
-        setTimeout(() => clearInterval(checkInterval), 30000);
+        setTimeout(() => clearInterval(ci), 30000);
       });
 
-      // FIX-PRELOAD: The Emscripten file_packager generates code that calls
-      // FS_preloadFile before HEAP8 is initialized, causing MEMFS write to
-      // crash with "Cannot read properties of undefined (reading 'buffer')".
-      //
-      // Root cause: loadPackage's IIFE runs immediately at script eval, kicks
-      // off a fetch. If the fetch resolves before WASM compilation completes,
-      // FS_preloadFile is called before HEAP8 is set.
-      //
-      // Fix: Wrap FS_preloadFile to wait for WASM compilation (Module._main set).
-      // HEAP8 is set inside receiveInstance BEFORE Module._main is exposed, so
-      // when _main becomes a function, HEAP8 is guaranteed to be initialized.
-      // No deadlock: FS_preloadFile doesn't depend on runDependencies.
       const patchInterval = setInterval(() => {
         const M = window.Module;
         if (!M || typeof M.FS_preloadFile !== 'function' || M._fsPreloadPatched) return;
         const orig = M.FS_preloadFile;
         M._fsPreloadPatched = true;
-
         M.FS_preloadFile = async function(...args) {
-          await window._wasmReady;
+          await wasmReady;
           return orig.apply(M, args);
         };
-        log('FS_preloadFile patched (waits for WASM compile)', 'info');
+        log('FS_preloadFile patched', 'info');
         clearInterval(patchInterval);
       }, 5);
       setTimeout(() => clearInterval(patchInterval), 30000);

@@ -234,6 +234,13 @@ if [ -d "$STAGES_DIR" ] && [ "$(ls -A "$STAGES_DIR" 2>/dev/null)" ]; then
     echo "  Including stages/ directory"
 fi
 
+# Include font directory (prism fonts for engine text rendering)
+FONT_DIR="$ENGINE_DIR/font"
+if [ -d "$FONT_DIR" ] && [ "$(ls -A "$FONT_DIR" 2>/dev/null)" ]; then
+    PRELOAD_FLAGS="$PRELOAD_FLAGS --preload $FONT_DIR@/font"
+    echo "  Including font/ directory"
+fi
+
 if [ -n "$PRELOAD_FLAGS" ]; then
     echo "  Running file_packager..."
     EMSCRIPTEN_ROOT="$(dirname "$(which emcc)")"
