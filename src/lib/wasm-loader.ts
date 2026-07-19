@@ -19,7 +19,6 @@ export interface GameInstance {
       returnType: string | null,
       argTypes: string[]
     ) => (...args: unknown[]) => unknown;
-    _main: () => void;
     _setExternalPlayerInput: (playerIndex: number, inputStr: string) => void;
     _disableExternalInput: (playerIndex: number) => void;
     _isExternalInputActive: (playerIndex: number) => number;
@@ -109,8 +108,6 @@ export function loadGameEngine(): Promise<GameInstance> {
       ...existingConfig,
       // Tell Emscripten where to find game.wasm and game.data — always /game/
       locateFile: (path: string) => "/game/" + path,
-      // Prevent automatic _main() call — we call it after onRuntimeInitialized
-      noInitialRun: true,
       onRuntimeInitialized: () => {
         clearTimeout(timeout);
         const module = w.Module as GameInstance["Module"];

@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
         setMugenAnimationHandlerPixelCenter(Vector2D(0.0, 0.0));
         setScreenAfterWrapperLogoScreen(getInitScreen());
         
-#ifdef DEVELOP
+#ifdef DEVELOP  
         //setUnscaledGameWavVolume(0);
         //setUnscaledGameMidiVolume(0);
 
