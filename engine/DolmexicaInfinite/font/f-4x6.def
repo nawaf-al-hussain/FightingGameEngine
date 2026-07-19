@@ -9,10 +9,10 @@
 [Def]
 ; Font type: "truetype" or "bitmap"
 type = truetype
-; Path to the TTF file — use absolute MEMFS path for reliable resolution
-file = /font/LiberationSans-Regular.ttf
+; Path to the TTF file (relative — addMugenFont2 sets working directory)
+file = LiberationSans-Regular.ttf
 ; Font size: width, height, 0 (width is ignored for truetype, height = pixel size)
-size = 8, 8, 0
+size = 16, 16, 0
 ; Character spacing: x, y, 0
 spacing = 0, 0, 0
 ; Render offset: x, y, 0

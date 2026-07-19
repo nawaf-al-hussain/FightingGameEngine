@@ -37,16 +37,11 @@ intro.storyboard =
 select = data/select.def
 ; Fight screen definition (lifebars, hit sparks, etc.)
 fight = data/fight.def
-; Fonts — MUGEN .fnt or .def files for text rendering
-; Note: TrueType font loading via SDL_ttf causes a hard crash in the WASM
-; build. Leaving fonts empty — engine runs without text rendering.
-; The engine's error recovery catches the "No fonts loaded" abortSystem()
-; call and continues running (game loop survives).
-; TODO: investigate SDL_ttf crash — may need different TTF or font format.
-; font0 = font/f-4x6.def
-; font1 = font/f-4x6.def
-; font2 = font/f-4x6.def
-; font3 = font/f-4x6.def
+; Fonts — TrueType font for text rendering
+font0 = font/f-4x6.def
+font1 = font/f-4x6.def
+font2 = font/f-4x6.def
+font3 = font/f-4x6.def
 
 ; ============================================================================
 ; Screen Layouts
