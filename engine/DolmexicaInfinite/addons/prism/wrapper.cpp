@@ -674,7 +674,7 @@ namespace prism {
                         resyncNetplayAfterScreenTransition();
                 }
 #ifdef __EMSCRIPTEN__
-                emscripten_set_main_loop(performScreenIteration, 60, 1);
+                emscripten_set_main_loop(performScreenIteration, 60, 0);
 #endif
 
                 while (!isPrismWrappedScreenOver()) {

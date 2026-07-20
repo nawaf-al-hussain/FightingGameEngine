@@ -68,6 +68,13 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
           if (destroyed) return;
           gameRef.current = game;
           setStatus("ready");
+          // Start the engine manually (noInitialRun = true in wasm-loader).
+          // try/catch because emscripten_set_main_loop throws + abortSystem throws.
+          try {
+            game.Module._main();
+          } catch (e) {
+            console.error("[GameCanvas] _main() threw:", e);
+          }
           onReady?.(game);
         } catch (e) {
           if (!destroyed) {

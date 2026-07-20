@@ -163,6 +163,8 @@
         },
         print: function(text) { log('[print] ' + text, 'info'); },
         printErr: function(text) { log('[printErr] ' + text, 'err'); },
+        noInitialRun: true,
+        noExitRuntime: true,
         onRuntimeInitialized: function () {
           clearTimeout(timeout);
           log('WASM runtime initialized', 'ok');
@@ -175,8 +177,9 @@
         },
         canvas: (() => {
           const c = document.createElement('canvas');
-          c.id = 'game-canvas';
+          c.id = 'canvas';
           c.width = 640; c.height = 480;
+          document.getElementById('canvas-wrap').appendChild(c);
           return c;
         })(),
       };
@@ -239,15 +242,24 @@
 
       setStatus('READY', '');
 
-      // Move the Emscripten-created canvas into our wrap
-      const emCanvas = document.getElementById('canvas') ||
-                       document.querySelector('canvas');
+      // Canvas was already attached to DOM in Module setup
+      const emCanvas = document.getElementById('canvas');
       if (emCanvas) {
         canvasPlaceholder.style.display = 'none';
-        document.getElementById('canvas-wrap').appendChild(emCanvas);
-        log('Canvas attached to DOM', 'ok');
+        log('Canvas ready (id=canvas, ' + emCanvas.width + 'x' + emCanvas.height + ')', 'ok');
       } else {
-        log('No canvas found — game may render to Module.canvas', 'err');
+        log('No canvas found', 'err');
+      }
+
+      // Start the engine manually (noInitialRun = true above).
+      // Wrapped in try/catch because emscripten_set_main_loop(..., 1) throws
+      // a SimulateInfiniteLoop exception, and abortSystem() inside the loop
+      // also throws. We catch both so the page survives.
+      log('Starting engine (_main)...', 'info');
+      try {
+        Module._main();
+      } catch (e) {
+        log('Engine _main() threw: ' + (e.message || e), 'err');
       }
 
       // Check P2 active status
