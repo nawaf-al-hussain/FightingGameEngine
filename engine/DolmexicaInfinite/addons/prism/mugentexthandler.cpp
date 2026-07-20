@@ -255,6 +255,16 @@ static void addMugenFont2(int tKey, const char* tPath) {
         }
         else if (e.mType == MUGEN_FONT_TYPE_TRUETYPE) {
                 loadMugenTruetypeFont(&script, &e);
+                // Check if font data was set — if not, erase the entry
+                // to prevent crashes from accessing an unset variant
+                auto* ttFont = std::get_if<MugenTruetypeFont>(&e.mData);
+                if (!ttFont || !ttFont->mFont) {
+                        logWarningFormat("Font %d failed to load. Removing from font map.", tKey);
+                        gMugenFontData.mFonts.erase(tKey);
+                        unloadMugenDefScript(&script);
+                        resetMugenFontDirectory();
+                        return;
+                }
         }
         else {
                 logError("Unimplemented font type.");
