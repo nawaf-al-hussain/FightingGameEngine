@@ -182,8 +182,8 @@ static void loadFightScreen() {
         setFightScreenGameSpeed();
 
         logg("[FIGHT] changePlayerState...");
-        changePlayerState(getRootPlayer(0), 5900);
-        changePlayerState(getRootPlayer(1), 5900);
+        changePlayerState(getRootPlayer(0), 0);
+        changePlayerState(getRootPlayer(1), 0);
         setPlayerStatemachineToUpdateAgain(getRootPlayer(0));
         setPlayerStatemachineToUpdateAgain(getRootPlayer(1));
 
@@ -207,7 +207,6 @@ static void unloadFightScreen() {
 static void drawFightScreen() {
         drawPlayers();
 }
-
 static Screen gDreamFightScreen;
 
 static Screen* getDreamFightScreen() {

@@ -580,6 +580,15 @@ void initDrawing() {
                 recoverFromError();
         }
 
+        // Guard against double initialization — if shaders are already
+        // compiled, skip re-creating them (causes GL state corruption)
+        static int sIsInitialized = 0;
+        if (sIsInitialized) {
+                debugLog("Drawing already initialized, skipping.");
+                return;
+        }
+        sIsInitialized = 1;
+
         ScreenSize sz = getScreenSize();
         setDrawingScreenScale((640.0 / sz.x), (480.0 / sz.y));
         setDrawingParametersToIdentity();

@@ -161,6 +161,11 @@ namespace prism {
                 loadMugenTextHandler();
         }
 
+        void setPrismWrapperMugenFlag() {
+                gPrismWrapperData.mIsUsingMugen = 1;
+                gPrismWrapperData.mIsUsingClipboard = 1;
+        }
+
         void initPrismWrapperWithConfigFile(const char* tPath) {
                 initBasicSystems();
 

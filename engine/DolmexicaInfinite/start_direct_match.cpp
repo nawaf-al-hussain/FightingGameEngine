@@ -102,7 +102,9 @@ void startDirectMatch(const char* p1Char, const char* p2Char, const char* stageP
         setMugenSpriteFileReaderSubTextureSplit(8, 1024);
     }
     
-    // Initialize the wrapper — sets up GL, audio, input, mugen module flag
+    // Initialize the wrapper — creates SDL window, GL context, audio, etc.
+    // loadScreen will call initBasicSystems again, but initDrawing guards
+    // against double-init of SDL/OpenGL.
     initPrismWrapperWithMugenFlags();
     logg("[DIRECT_MATCH] Wrapper initialized.");
     

@@ -165,6 +165,14 @@
         printErr: function(text) { log('[printErr] ' + text, 'err'); },
         noInitialRun: true,
         noExitRuntime: true,
+        preRun: [function() {
+          // Set SDL_GL attributes for proper WebGL rendering
+          if (typeof SDL !== 'undefined' && SDL.GL) {
+            SDL.GL.setAttributes = function(a) {
+              a.preserveDrawingBuffer = true;
+            };
+          }
+        }],
         onRuntimeInitialized: function () {
           clearTimeout(timeout);
           log('WASM runtime initialized', 'ok');
