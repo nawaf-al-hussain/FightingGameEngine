@@ -634,7 +634,9 @@ namespace prism {
                 }
                 gPrismWrapperData.mUpdateTimeCounter -= updateAmount;
 
+                logg("[WRAPPER] drawScreen...");
                 drawScreen();
+                logg("[WRAPPER] drawScreen done.");
                 if (gPrismWrapperData.mScreen->mGetNextScreen && !gPrismWrapperData.mNext) {
                         gPrismWrapperData.mNext = gPrismWrapperData.mScreen->mGetNextScreen();
                 }

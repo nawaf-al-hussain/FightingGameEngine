@@ -35,11 +35,11 @@ select = data/select.def
 ; Fight screen definition (lifebars, hit sparks, etc.)
 fight = data/fight.def
 ; Fonts — MUGEN .fnt or .def files for text rendering
-; Fonts — TrueType font (memory-based loading, NULL-safe rendering)
-font0 = font/f-4x6.def
-font1 = font/f-4x6.def
-font2 = font/f-4x6.def
-font3 = font/f-4x6.def
+; Fonts — disabled (TrueType causes WASM crash, bitmap .fnt PCX also crashes)
+; font0 = font/f-4x6.def
+; font1 = font/f-4x6.def
+; font2 = font/f-4x6.def
+; font3 = font/f-4x6.def
 
 ; ============================================================================
 ; Screen Layouts

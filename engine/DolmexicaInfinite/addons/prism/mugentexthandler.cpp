@@ -37,14 +37,14 @@ static void loadBitmapFont(MugenDefScript* tScript, MugenFont* tFont) {
 
 static void loadMugenTruetypeFont(MugenDefScript* tScript, MugenFont* tFont) {
         MugenTruetypeFont e;
+        e.mFont = NULL;  // default to NULL — will be set if loading succeeds
         char* name = getAllocatedMugenDefStringVariable(tScript, "def", "file");
         e.mFont = loadTruetypeFont(name, tFont->mSize.y);
         freeMemory(name);
         if (!e.mFont) {
                 logWarning("TrueType font loading failed — text will not render.");
-                return;
         }
-        tFont->mData = e;
+        tFont->mData = e;  // always set mData so std::get doesn't throw
 }
 
 typedef struct {
@@ -255,15 +255,10 @@ static void addMugenFont2(int tKey, const char* tPath) {
         }
         else if (e.mType == MUGEN_FONT_TYPE_TRUETYPE) {
                 loadMugenTruetypeFont(&script, &e);
-                // Check if font data was set — if not, erase the entry
-                // to prevent crashes from accessing an unset variant
+                // Check if font loaded successfully
                 auto* ttFont = std::get_if<MugenTruetypeFont>(&e.mData);
                 if (!ttFont || !ttFont->mFont) {
-                        logWarningFormat("Font %d failed to load. Removing from font map.", tKey);
-                        gMugenFontData.mFonts.erase(tKey);
-                        unloadMugenDefScript(&script);
-                        resetMugenFontDirectory();
-                        return;
+                        logWarningFormat("Font %d failed to load (NULL TTF font). Keeping entry for size measurement.", tKey);
                 }
         }
         else {
@@ -325,18 +320,24 @@ void loadMugenTextHandler()
 }
 
 static void unloadBitmapFont(MugenFont* tFont) {
-        auto& bitmapFont = std::get<MugenBitmapFont>(tFont->mData);
-        unloadMugenSpriteFile(&bitmapFont.mSprites);
+        auto* bitmapFont = std::get_if<MugenBitmapFont>(&tFont->mData);
+        if (bitmapFont) {
+                unloadMugenSpriteFile(&bitmapFont->mSprites);
+        }
 }
 
 static void unloadElecbyteFont(MugenFont* tFont) {
-        auto& elecbyteFont = std::get<MugenElecbyteFont>(tFont->mData);
-        unloadMugenSpriteFileSprite(&elecbyteFont.mSprite);
+        auto* elecbyteFont = std::get_if<MugenElecbyteFont>(&tFont->mData);
+        if (elecbyteFont) {
+                unloadMugenSpriteFileSprite(&elecbyteFont->mSprite);
+        }
 }
 
 static void unloadMugenTruetypeFont(MugenFont* tFont) {
-        auto& truetypeFont = std::get<MugenTruetypeFont>(tFont->mData);
-        unloadTruetypeFont(truetypeFont.mFont);
+        auto* truetypeFont = std::get_if<MugenTruetypeFont>(&tFont->mData);
+        if (truetypeFont && truetypeFont->mFont) {
+                unloadTruetypeFont(truetypeFont->mFont);
+        }
 }
 
 
@@ -643,6 +644,7 @@ static void drawSingleBitmapText(MugenText* e) {
 static void drawSingleTruetypeText(MugenText* e) {
         MugenFont* font = e->mFont;
         auto& truetypeFont = std::get<MugenTruetypeFont>(font->mData);
+        if (!truetypeFont.mFont) return;  // font failed to load — skip rendering
         drawTruetypeText(e->mDisplayText, truetypeFont.mFont, e->mPosition, font->mSize, Vector3D(e->mR, e->mG, e->mB), e->mTextBoxWidth, e->mRectangle);
 }
 
