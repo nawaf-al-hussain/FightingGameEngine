@@ -46,205 +46,223 @@
 #include "fightnetplay.h"
 
 static struct {
-	void(*mWinCB)();
-	void(*mLoseCB)();
-	MemoryStack mMemoryStack;
+        void(*mWinCB)();
+        void(*mLoseCB)();
+        MemoryStack mMemoryStack;
 } gFightScreenData;
 
 static void setFightScreenGameSpeed() {
-	if (isDebugOverridingTimeDilatation()) return;
+        if (isDebugOverridingTimeDilatation()) return;
 
-	int gameSpeed = getGlobalGameSpeed();
-	if (gameSpeed < 0) {
-		double baseFactor = (-gameSpeed) / 9.0;
-		double speedFactor = 1 - 0.75 * baseFactor;
-		setWrapperTimeDilatation(speedFactor * getConfigGameSpeedTimeFactor());
-	}
-	else if (gameSpeed > 0) {
-		double baseFactor = gameSpeed / 9.0;
-		double speedFactor = 1 + baseFactor;
-		setWrapperTimeDilatation(speedFactor * getConfigGameSpeedTimeFactor());
-	}
+        int gameSpeed = getGlobalGameSpeed();
+        if (gameSpeed < 0) {
+                double baseFactor = (-gameSpeed) / 9.0;
+                double speedFactor = 1 - 0.75 * baseFactor;
+                setWrapperTimeDilatation(speedFactor * getConfigGameSpeedTimeFactor());
+        }
+        else if (gameSpeed > 0) {
+                double baseFactor = gameSpeed / 9.0;
+                double speedFactor = 1 + baseFactor;
+                setWrapperTimeDilatation(speedFactor * getConfigGameSpeedTimeFactor());
+        }
 }
 
 extern int gDebugAssignmentAmount;
 extern int gDebugStateControllerAmount;
 namespace prism {
-	extern int gDebugStringMapAmount;
+        extern int gDebugStringMapAmount;
 }
 extern int gPruneAmount;
 
 static void exitFightScreenCB(void* tCaller);
 
 static void loadFightScreen() {
-	setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
+        logg("[FIGHT] setWrapperBetweenScreensCB...");
+        setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
 
-	logMemoryState();
-	logg("create mem stack");
-	gFightScreenData.mMemoryStack = createMemoryStack(1024 * 1024 * 3);
-	
-	logMemoryState();
-	logg("init evaluators");
-	
-	gDebugAssignmentAmount = 0;
-	gDebugStateControllerAmount = 0;
-	gDebugStringMapAmount = 0;
-	gPruneAmount = 0;
+        logg("[FIGHT] logMemoryState...");
+        logMemoryState();
+        logg("[FIGHT] create mem stack");
+        gFightScreenData.mMemoryStack = createMemoryStack(1024 * 1024 * 3);
 
-	setupDreamGameCollisions();
-	setupDreamAssignmentReader(&gFightScreenData.mMemoryStack);
-	setupDreamAssignmentEvaluator();
-	setupDreamMugenStateControllerHandler(&gFightScreenData.mMemoryStack);
-	
-	logMemoryState();
-	logg("init custom handlers");
+        logg("[FIGHT] init evaluators");
 
-	instantiateActor(getMugenAnimationUtilityHandler());
-	instantiateActor(getDreamAIHandler());
-	instantiateActor(getProjectileHandler());
-	instantiateActor(getDolmexicaSoundHandler());
+        gDebugAssignmentAmount = 0;
+        gDebugStateControllerAmount = 0;
+        gDebugStringMapAmount = 0;
+        gPruneAmount = 0;
 
-	instantiateActor(getDreamMugenCommandHandler());
-	instantiateActor(getPreStateMachinePlayersBlueprint());
-	if (getGameMode() == GAME_MODE_NETPLAY) {
-		instantiateActor(getFightNetplayBlueprint());
-	}
-	instantiateActor(getDreamMugenStateHandler());
-	if (isMugenDebugActive()) {
-		int actorID = instantiateActor(getFightDebug());
-		setActorUnpausable(actorID);
-	}
-	
-	logMemoryState();
-	logg("init stage");
+        logg("[FIGHT] setupDreamGameCollisions...");
+        setupDreamGameCollisions();
+        logg("[FIGHT] setupDreamAssignmentReader...");
+        setupDreamAssignmentReader(&gFightScreenData.mMemoryStack);
+        logg("[FIGHT] setupDreamAssignmentEvaluator...");
+        setupDreamAssignmentEvaluator();
+        logg("[FIGHT] setupDreamMugenStateControllerHandler...");
+        setupDreamMugenStateControllerHandler(&gFightScreenData.mMemoryStack);
 
-	instantiateActor(getDreamStageBP());
+        logg("[FIGHT] init custom handlers");
 
-	logMemoryState();
-	logg("init players");
+        logg("[FIGHT] MugenAnimationUtilityHandler...");
+        instantiateActor(getMugenAnimationUtilityHandler());
+        logg("[FIGHT] DreamAIHandler...");
+        instantiateActor(getDreamAIHandler());
+        logg("[FIGHT] ProjectileHandler...");
+        instantiateActor(getProjectileHandler());
+        logg("[FIGHT] DolmexicaSoundHandler...");
+        instantiateActor(getDolmexicaSoundHandler());
 
-	loadPlayers(&gFightScreenData.mMemoryStack);
-	
-	if (hasStoryHelper()) {
-		instantiateActor(getDolmexicaStoryActor());
-	}
+        logg("[FIGHT] DreamMugenCommandHandler...");
+        instantiateActor(getDreamMugenCommandHandler());
+        logg("[FIGHT] PreStateMachinePlayersBlueprint...");
+        instantiateActor(getPreStateMachinePlayersBlueprint());
+        if (getGameMode() == GAME_MODE_NETPLAY) {
+                instantiateActor(getFightNetplayBlueprint());
+        }
+        logg("[FIGHT] DreamMugenStateHandler...");
+        instantiateActor(getDreamMugenStateHandler());
+        if (isMugenDebugActive()) {
+                int actorID = instantiateActor(getFightDebug());
+                setActorUnpausable(actorID);
+        }
 
-	instantiateActor(getDreamFightUIBP());
-	instantiateActor(getDreamGameLogic());
+        logg("[FIGHT] init stage");
+        logg("[FIGHT] DreamStageBP...");
+        instantiateActor(getDreamStageBP());
 
-	instantiateActor(getFightResultDisplay());
-	
-	logMemoryState();
-	logg("shrinking memory stack");
-	resizeMemoryStackToCurrentSize(&gFightScreenData.mMemoryStack);
-	logMemoryState();
-	shutdownDreamAssignmentReader();
-	
-	loadPlayerSprites();
-	setUIFaces();
-	
-	playDreamStageMusic();
-	if (getGameMode() == GAME_MODE_OSU) {
-		instantiateActor(getOsuHandler());
-	}
+        logg("[FIGHT] init players");
+        logg("[FIGHT] loadPlayers...");
+        loadPlayers(&gFightScreenData.mMemoryStack);
 
-	instantiateActor(getPauseControllerHandler());
-	instantiateActor(getPostStateMachinePlayersBlueprint());
-	instantiateActor(getDreamExplodHandler());
+        if (hasStoryHelper()) {
+                instantiateActor(getDolmexicaStoryActor());
+        }
 
-	if (isInDevelopMode()) {
-		instantiateActor(getDolmexicaDebug());
-	}
+        logg("[FIGHT] DreamFightUIBP...");
+        instantiateActor(getDreamFightUIBP());
+        logg("[FIGHT] DreamGameLogic...");
+        instantiateActor(getDreamGameLogic());
 
-	if (getGameMode() == GAME_MODE_TRAINING) {
-		int actorID = instantiateActor(getTrainingModeMenu());
-		setActorUnpausable(actorID);
-	}
+        logg("[FIGHT] FightResultDisplay...");
+        instantiateActor(getFightResultDisplay());
 
-	setFightScreenGameSpeed();
-	
-	changePlayerState(getRootPlayer(0), 5900);
-	changePlayerState(getRootPlayer(1), 5900);
-	setPlayerStatemachineToUpdateAgain(getRootPlayer(0));
-	setPlayerStatemachineToUpdateAgain(getRootPlayer(1));
+        logg("[FIGHT] shrinking memory stack");
+        resizeMemoryStackToCurrentSize(&gFightScreenData.mMemoryStack);
+        logg("[FIGHT] shutdownDreamAssignmentReader...");
+        shutdownDreamAssignmentReader();
 
-	
+        logg("[FIGHT] loadPlayerSprites...");
+        loadPlayerSprites();
+        logg("[FIGHT] setUIFaces...");
+        setUIFaces();
 
-	logMemoryState();
+        logg("[FIGHT] playDreamStageMusic...");
+        playDreamStageMusic();
+        if (getGameMode() == GAME_MODE_OSU) {
+                instantiateActor(getOsuHandler());
+        }
 
-	logFormat("assignments: %d", gDebugAssignmentAmount);
-	logFormat("controllers: %d", gDebugStateControllerAmount);
-	logFormat("maps: %d", gDebugStringMapAmount);
-	logFormat("memory blocks: %d", getAllocatedMemoryBlockAmount());
-	logFormat("memory stack used: %d", (int)gFightScreenData.mMemoryStack.mOffset);
+        logg("[FIGHT] PauseControllerHandler...");
+        instantiateActor(getPauseControllerHandler());
+        logg("[FIGHT] PostStateMachinePlayersBlueprint...");
+        instantiateActor(getPostStateMachinePlayersBlueprint());
+        logg("[FIGHT] DreamExplodHandler...");
+        instantiateActor(getDreamExplodHandler());
+
+        if (isInDevelopMode()) {
+                instantiateActor(getDolmexicaDebug());
+        }
+
+        if (getGameMode() == GAME_MODE_TRAINING) {
+                int actorID = instantiateActor(getTrainingModeMenu());
+                setActorUnpausable(actorID);
+        }
+
+        logg("[FIGHT] setFightScreenGameSpeed...");
+        setFightScreenGameSpeed();
+
+        logg("[FIGHT] changePlayerState...");
+        changePlayerState(getRootPlayer(0), 5900);
+        changePlayerState(getRootPlayer(1), 5900);
+        setPlayerStatemachineToUpdateAgain(getRootPlayer(0));
+        setPlayerStatemachineToUpdateAgain(getRootPlayer(1));
+
+        logg("[FIGHT] loadFightScreen complete.");
+        logMemoryState();
+
+        logFormat("assignments: %d", gDebugAssignmentAmount);
+        logFormat("controllers: %d", gDebugStateControllerAmount);
+        logFormat("maps: %d", gDebugStringMapAmount);
+        logFormat("memory blocks: %d", getAllocatedMemoryBlockAmount());
+        logFormat("memory stack used: %d", (int)gFightScreenData.mMemoryStack.mOffset);
 }
 
 static void unloadFightScreen() {
-	unloadPlayers();
-	resetGameMode();
-	shutdownDreamMugenStateControllerHandler();
-	shutdownDreamAssignmentEvaluator();
+        unloadPlayers();
+        resetGameMode();
+        shutdownDreamMugenStateControllerHandler();
+        shutdownDreamAssignmentEvaluator();
 }
 
 static void drawFightScreen() {
-	drawPlayers();
+        drawPlayers();
 }
 
 static Screen gDreamFightScreen;
 
 static Screen* getDreamFightScreen() {
-	gDreamFightScreen = makeScreen(loadFightScreen, NULL, drawFightScreen, unloadFightScreen);
-	return &gDreamFightScreen;
+        gDreamFightScreen = makeScreen(loadFightScreen, NULL, drawFightScreen, unloadFightScreen);
+        return &gDreamFightScreen;
 }
 
 static void loadFightFonts(void* tCaller) {
-	(void)tCaller;
-	loadMugenFightFonts();
+        (void)tCaller;
+        loadMugenFightFonts();
 }
 
 static void exitFightScreenCB(void* /*tCaller*/) {
-	if (!isDebugOverridingTimeDilatation()) {
-		setWrapperTimeDilatation(getConfigGameSpeedTimeFactor());
-	}
-	unloadMugenFonts();
-	loadMugenSystemFonts();
+        if (!isDebugOverridingTimeDilatation()) {
+                setWrapperTimeDilatation(getConfigGameSpeedTimeFactor());
+        }
+        unloadMugenFonts();
+        loadMugenSystemFonts();
 }
 
 void startFightScreen(void(*tWinCB)(), void(*tLoseCB)()) {
-	gFightScreenData.mWinCB = tWinCB;
-	gFightScreenData.mLoseCB = tLoseCB;
-	setWrapperBetweenScreensCB(loadFightFonts, NULL);
-	setNewScreen(getDreamFightScreen());
+        gFightScreenData.mWinCB = tWinCB;
+        gFightScreenData.mLoseCB = tLoseCB;
+        setWrapperBetweenScreensCB(loadFightFonts, NULL);
+        setNewScreen(getDreamFightScreen());
 }
 
 void reloadFightScreen()
 {
-	startFightScreen(gFightScreenData.mWinCB, gFightScreenData.mLoseCB);
+        startFightScreen(gFightScreenData.mWinCB, gFightScreenData.mLoseCB);
 }
 
 void stopFightScreenWin() {
-	setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
-	if (!gFightScreenData.mWinCB) return;
+        setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
+        if (!gFightScreenData.mWinCB) return;
 
-	gFightScreenData.mWinCB();
+        gFightScreenData.mWinCB();
 }
 
 void stopFightScreenLose()
 {
-	setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
-	if (!gFightScreenData.mLoseCB) {
-		setNewScreen(getDreamTitleScreen());
-		return;
-	}
+        setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
+        if (!gFightScreenData.mLoseCB) {
+                setNewScreen(getDreamTitleScreen());
+                return;
+        }
 
-	gFightScreenData.mLoseCB();
+        gFightScreenData.mLoseCB();
 }
 
 void stopFightScreenToFixedScreen(Screen* tNextScreen) {
-	setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
-	setNewScreen(tNextScreen);
+        setWrapperBetweenScreensCB(exitFightScreenCB, NULL);
+        setNewScreen(tNextScreen);
 }
 
 Screen* getDreamFightScreenForTesting() {
-	return getDreamFightScreen();
+        return getDreamFightScreen();
 }

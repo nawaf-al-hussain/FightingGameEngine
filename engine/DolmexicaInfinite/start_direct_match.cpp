@@ -93,8 +93,6 @@ void startDirectMatch(const char* p1Char, const char* p2Char, const char* stageP
     
     logg("[DIRECT_MATCH] Initializing engine...");
     
-    // Same initialization as main() but without font loading and screen handling
-    setDevelopMode();
     setMinimumLogType(LOG_TYPE_NORMAL);
     
     setGameName("FIGHTING GAME ENGINE");
@@ -104,16 +102,17 @@ void startDirectMatch(const char* p1Char, const char* p2Char, const char* stageP
         setMugenSpriteFileReaderSubTextureSplit(8, 1024);
     }
     
+    // Initialize the wrapper — sets up GL, audio, input, mugen module flag
     initPrismWrapperWithMugenFlags();
     logg("[DIRECT_MATCH] Wrapper initialized.");
     
+    // Load config (mugen.cfg) — needed for game speed, rules, etc.
     loadMugenConfig();
     logg("[DIRECT_MATCH] Config loaded.");
     
     loadGlobalVariables(PrismSaveSlot::AMOUNT);
     
     // Skip setFont and loadMugenSystemFonts — they crash in WASM
-    // The engine will run without text rendering
     
     logg("[DIRECT_MATCH] Check framerate");
     FramerateSelectReturnType framerateReturnType = selectFramerate();
@@ -123,22 +122,17 @@ void startDirectMatch(const char* p1Char, const char* p2Char, const char* stageP
     }
     
     setMemoryHandlerCompressionActive();
-    initClipboardForGame();
     setScreenEffectZ(99);
     setMugenAnimationHandlerPixelCenter(Vector2D(0.0, 0.0));
     
-    // Skip initDolmexicaDebug — not needed for web
-    // Skip disableWrapperErrorRecovery — keep error recovery enabled
-    
-    logg("[DIRECT_MATCH] Engine initialized. Setting up match...");
-    
-    // Set up player chars, stage, and game mode
+    // Set up match (player paths, stage, game mode)
     startDirectMatchInternal(p1Char, p2Char, stagePath);
     
-    // Start screen handling with the fight screen directly.
-    // getDreamFightScreenForTesting() returns the Screen* for the fight screen.
-    // loadFightScreen() will be called by loadScreen(), which loads players
-    // and stage using the paths we just set.
+    // Start screen handling — this calls loadScreen which calls
+    // initBasicSystems again. The GL re-init is handled gracefully
+    // (initOpenGL checks for existing state).
+    // emscripten_set_main_loop(simulateInfiniteLoop=1) throws an exception
+    // that is caught by the try/catch in the JS caller.
     logg("[DIRECT_MATCH] Starting screen handling with fight screen...");
     startScreenHandling(getDreamFightScreenForTesting());
     

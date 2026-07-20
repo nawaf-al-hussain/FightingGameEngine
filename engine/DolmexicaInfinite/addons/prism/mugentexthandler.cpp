@@ -886,9 +886,13 @@ void setMugenTextFont(int tID, int tFont)
 {
         MugenText* e = &gMugenTextHandler.mHandledTexts[tID];
 
-        e->mPosition = vecAdd2D(e->mPosition, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        if (e->mFont) {
+                e->mPosition = vecAdd2D(e->mPosition, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        }
         e->mFont = getUsedMugenFontFromAvailable(tFont);
-        e->mPosition = vecSub(e->mPosition, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        if (e->mFont) {
+                e->mPosition = vecSub(e->mPosition, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        }
 }
 
 static double getBitmapTextSize(MugenText* e) {
@@ -945,6 +949,8 @@ static double getElecbyteTextSize(MugenText* e) {
 }
 
 static double getMugenTextSizeXInternal(MugenText* e) {
+
+        if (!e->mFont) return 0;
 
         if (e->mFont->mType == MUGEN_FONT_TYPE_BITMAP) {
                 return getBitmapTextSize(e);
@@ -1104,11 +1110,13 @@ void changeMugenText(int tID, const char * tText)
 
 Position getMugenTextPosition(int tID) {
         MugenText* e = &gMugenTextHandler.mHandledTexts[tID];
-        
+
         MugenTextAlignment alignment = e->mAlignment;
         setMugenTextAlignment(tID, MUGEN_TEXT_ALIGNMENT_LEFT);
         Position ret = e->mPosition;
-        ret = vecAdd(ret, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        if (e->mFont) {
+                ret = vecAdd(ret, Vector3D(0, e->mFont->mSize.y * e->mScale, 0));
+        }
         setMugenTextAlignment(tID, alignment);
         return ret;
 }
