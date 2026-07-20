@@ -20,12 +20,9 @@ mugenversion = 1.0
 localcoord = 320, 240
 
 [Files]
-; Sprite file for system graphics (menus, cursors, etc.)
-; Points to Songoku's SFF as a placeholder — the engine needs a valid SFF
-; to initialize the sprite reader, even if the sprites don't match the UI.
-; A dedicated system.sff should be created for proper UI graphics.
-spr = chars/Songoku/songoku.sff
-; Sound file for system sounds
+; Sprite file for system graphics — SFF v1 with PCX sprites
+spr = data/system.sff
+; Sound file for system sounds (empty — no system sounds)
 snd = 
 ; Logo storyboard (intro animation before title)
 ; Empty = skip logo
