@@ -251,15 +251,12 @@
         log('No canvas found', 'err');
       }
 
-      // Start the engine manually (noInitialRun = true above).
-      // Wrapped in try/catch because emscripten_set_main_loop(..., 1) throws
-      // a SimulateInfiniteLoop exception, and abortSystem() inside the loop
-      // also throws. We catch both so the page survives.
-      log('Starting engine (_main)...', 'info');
+      // Start the engine with a direct match (bypasses text-dependent menu screens)
+      log('Starting direct match (Songoku vs Vegeta, stage0)...', 'info');
       try {
-        Module._main();
+        Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'stage0.def']);
       } catch (e) {
-        log('Engine _main() threw: ' + (e.message || e), 'err');
+        log('Engine _startDirectMatch() threw: ' + (e.message || e), 'err');
       }
 
       // Check P2 active status

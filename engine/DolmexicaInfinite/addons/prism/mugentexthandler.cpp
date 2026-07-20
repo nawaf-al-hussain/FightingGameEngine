@@ -385,8 +385,8 @@ MugenFont* getUsedMugenFontFromAvailable(int tFont)
                 return &gMugenFontData.mFonts.begin()->second;
         }
         else {
-                logErrorFormat("[MugenTextHandler] Failed font fallback for font %d: No fonts loaded.", tFont);
-                abortSystem();
+                logWarningFormat("[MugenTextHandler] No fonts loaded. Skipping text (font %d).", tFont);
+                return nullptr;
         }
         return nullptr;
 }
@@ -785,6 +785,7 @@ static void drawSingleText(void* tCaller, MugenText& tData) {
 
         MugenText* e = &tData;
         if (!e->mIsVisible) return;
+        if (!e->mFont) return;
 
         if (e->mFont->mType == MUGEN_FONT_TYPE_BITMAP) {
                 drawSingleBitmapText(e);
@@ -839,6 +840,19 @@ int addMugenText(const char* tText, const Position& tPosition, int tFont)
         strcpy(e.mDisplayText, tText);
 
         e.mFont = getUsedMugenFontFromAvailable(tFont);
+        if (!e.mFont) {
+                // No fonts available — create invisible text entry
+                e.mIsVisible = 0;
+                e.mScale = 1;
+                e.mPosition = tPosition;
+                e.mR = e.mG = e.mB = 1;
+                e.mAlignment = MUGEN_TEXT_ALIGNMENT_LEFT;
+                e.mRectangle = GeoRectangle2D(-INF / 2, -INF / 2, INF, INF);
+                e.mTextBoxWidth = INF;
+                e.mBuildupDurationPerLetter = INF;
+                e.mBuildupNow = 0;
+                return id;
+        }
         e.mScale = 1;
         e.mPosition = vecSub(tPosition, Vector3D(0, e.mFont->mSize.y * e.mScale, 0));
         e.mR = e.mG = e.mB = 1;

@@ -19,10 +19,11 @@ spr =
 ; Fight sound file
 snd = 
 ; Fonts for fight text (round announcements, KO, etc.)
-font0 = font/f-4x6.def
-font1 = font/f-4x6.def
-font2 = font/f-4x6.def
-font3 = font/f-4x6.def
+; Fonts — disabled (TrueType crashes in WASM)
+; font0 = font/f-4x6.def
+; font1 = font/f-4x6.def
+; font2 = font/f-4x6.def
+; font3 = font/f-4x6.def
 
 [Lifebar]
 ; Player 1 lifebar position and size

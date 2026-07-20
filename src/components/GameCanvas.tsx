@@ -68,12 +68,11 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
           if (destroyed) return;
           gameRef.current = game;
           setStatus("ready");
-          // Start the engine manually (noInitialRun = true in wasm-loader).
-          // try/catch because emscripten_set_main_loop throws + abortSystem throws.
+          // Start the engine with a direct match (bypasses text-dependent menu screens)
           try {
-            game.Module._main();
+            game.Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'stage0.def']);
           } catch (e) {
-            console.error("[GameCanvas] _main() threw:", e);
+            console.error("[GameCanvas] _startDirectMatch() threw:", e);
           }
           onReady?.(game);
         } catch (e) {
