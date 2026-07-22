@@ -70,7 +70,7 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
           setStatus("ready");
           // Start the engine with a direct match (bypasses text-dependent menu screens)
           try {
-            game.Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'stage0.def']);
+            game.Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'DMjmansion.def']);
           } catch (e) {
             console.error("[GameCanvas] _startDirectMatch() threw:", e);
           }

@@ -32,3 +32,4 @@ Vegeta
 ; Stages selectable in the stage select screen
 ; Format: stagepath [, music [, musicstage ]]
 stages/stage0.def
+stages/DMjmansion.def
