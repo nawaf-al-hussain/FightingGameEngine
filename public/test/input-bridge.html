@@ -260,9 +260,9 @@
       }
 
       // Start the engine with a direct match (bypasses text-dependent menu screens)
-      log('Starting direct match (Songoku vs Vegeta, stage0)...', 'info');
+      log('Starting direct match (Songoku vs Vegeta, DMjmansion)...', 'info');
       try {
-        Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'stage0.def']);
+        Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'DMjmansion.def']);
       } catch (e) {
         log('Engine _startDirectMatch() threw: ' + (e.message || e), 'err');
       }

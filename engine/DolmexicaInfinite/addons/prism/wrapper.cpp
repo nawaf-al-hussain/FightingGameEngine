@@ -103,7 +103,15 @@ namespace prism {
                 int mIsActive;
         } gPrismWrapperData;
 
+        static int sBasicSystemsInitialized = 0;
+
         static void initBasicSystems() {
+                if (sBasicSystemsInitialized) {
+                        debugLog("Basic systems already initialized, skipping.");
+                        return;
+                }
+                sBasicSystemsInitialized = 1;
+
                 logg("Initiating system.");
                 initSystem();
                 debugLog("Initiating memory handler.");

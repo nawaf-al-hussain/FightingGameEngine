@@ -103,8 +103,8 @@ void startDirectMatch(const char* p1Char, const char* p2Char, const char* stageP
     }
     
     // Initialize the wrapper — creates SDL window, GL context, audio, etc.
-    // loadScreen will call initBasicSystems again, but initDrawing guards
-    // against double-init of SDL/OpenGL.
+    // initBasicSystems has a guard to prevent double-init when loadScreen
+    // calls it again.
     initPrismWrapperWithMugenFlags();
     logg("[DIRECT_MATCH] Wrapper initialized.");
     

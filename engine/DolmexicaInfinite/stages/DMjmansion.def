@@ -1,0 +1,170 @@
+;[Links]:==============================================================
+;
+;http://doom.mugen-infantry.net
+;
+ [Info];===============================================================
+;
+ name            = "DM-Japanese Mansion"
+;author          = DooM
+;version         = 1.0
+;release date    = 04.05.09
+;hi-res?           YES
+;super jump?       KINDA
+;animated?         NO
+;audio included?   NO
+;
+;[Author's Comments];==================================================
+;
+;Stage sprites originally come from 
+;"Capoeira Fighter 3 - Ultimate World Tournament" game.
+;They have just been modified and programmed into Mugen by me.
+;
+;If you enjoy the stage, go and buy CF3 game. It's really great!
+;
+;http://www.spiritonin.com/capoeirafighter/
+;
+;----------------------------------------------------------------------
+;[IMPORTANT]
+;
+;If you're having some audio problems, just go to mugen.CFG located
+;in your Mugen/data folder. Then just find a row which says "[Sound Win]"
+;or [Sound Linux] depending on which OS you have.
+;
+;Paste there this piece of text:
+;
+;----------------------------------------------------------------------
+plugin = looptype=2,plugins/IN_MP3.dll, mp3, mp2, mpg
+plugin = looptype=2,plugins/in_mad.dll,mp3,mp2,mpg
+plugin = looptype=2,plugins/in_mp3PRO.dll,mp3
+plugin = looptype=2,plugins/IN_MP3.dll,mp3
+plugin = looptype=2,plugins/in_vorbis.dll, ogg
+plugin = looptype=2,plugins/in_adx.dll, adx
+plugin = looptype=2,plugins/in_ape.dll, ape
+plugin = looptype=2,plugins/in_snes.dll, spc,sp1,sp2,sp3,sp4,sp5,sp6,sp7,sp8,sp9,sp0
+plugin = looptype=2,plugins/in_psf.dll, psf, minipsf, psf2, minipsf2, psflib, psf2lib
+plugin = looptype=2,plugins/in_qsf.dll, qsf, miniqsf, qsflib
+plugin = looptype=2,plugins/in_ym.dll, gym, cym
+plugin = looptype=2,plugins/zlib.dll, zip
+plugin = looptype=2,plugins/in_midi.dll,mid,midi
+;----------------------------------------------------------------------
+;
+;Now you just have to find those plugins by yourself. I'm not
+;a software pirate, so I can't really give them to ya.
+;
+;======================================================================
+; Contact: doom@mugenplanet.com
+;======================================================================
+
+[Camera];--------------------------------------------------------------
+startx = 0
+starty = 0
+
+boundleft = -40
+boundright = 40
+
+boundhigh = -60
+boundlow = 0
+
+verticalfollow = .5
+tension = 60
+floortension = 50
+
+[PlayerInfo];----------------------------------------------------------
+
+p1startx = -70
+p1starty = 0
+p1startz = 0
+p1facing = 1
+
+p2startx = 70
+p2starty = 0
+p2startz = 0
+p2facing = -1
+
+leftbound  = -1000
+rightbound =  1000
+topbound  =  0
+botbound  =  0
+
+[Scaling];-------------------------------------------------------------
+
+topz     = 0
+botz     = 50
+topscale = 1
+botscale = 1.2
+
+[Bound];---------------------------------------------------------------
+
+screenleft = 15
+screenright = 15
+
+[StageInfo];-----------------------------------------------------------
+
+zoffset = 216
+autoturn = 1
+resetBG = 1
+hires = 1
+
+[Shadow];--------------------------------------------------------------
+
+intensity = 128
+color = 64,92,0
+yscale = 0.3
+fade.range = 80,20
+
+[Reflection];----------------------------------------------------------
+
+intensity = 0
+
+[Music];---------------------------------------------------------------
+
+bgmusic =
+bgvolume = 255
+bgm.loop = 0
+
+[BGdef];---------------------------------------------------------------
+
+spr = stages/DMjmansion.sff
+debugbg = 0
+
+;======================================================================
+
+[BG 1]
+type = normal
+spriteno = 0,0
+layerno = 0
+start = 0,-45
+delta = 2,2
+mask = 1
+
+[BG 2]
+type = normal
+spriteno = 0,1
+layerno = 0
+start = 0,-45
+delta = 2,2
+mask = 1
+
+[BG 3]
+type = normal
+spriteno = 0,2
+layerno = 0
+start = 0,-45
+delta = 2,2
+mask = 1
+
+[BG 4]
+type = normal
+spriteno = 0,3
+layerno = 0
+start = 0,-45
+delta = 2,2
+mask = 1
+
+[BG 5]
+type = normal
+spriteno = 0,4
+layerno = 0
+start = 0,-45
+delta = 2,2
+mask = 1
