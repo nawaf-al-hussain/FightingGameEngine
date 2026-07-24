@@ -10,11 +10,9 @@ out/
 .env.local
 .env.production.local
 
-# WASM build artifacts (built locally, not committed)
-public/game/*.wasm
-public/game/*.data
-public/game/*.js
-public/game/index.html
+# WASM build artifacts — committed so Vercel deployments have them.
+# (Build takes 5+ min and needs Emscripten SDK — not feasible on Vercel.)
+# Each rebuild changes file contents, so commit after every build:wasm.
 
 # Intermediate build directory
 build/
