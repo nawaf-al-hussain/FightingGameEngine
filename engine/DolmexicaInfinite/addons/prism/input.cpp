@@ -547,16 +547,28 @@ namespace prism {
                 }
         }
 
-        // Apply remote input overlay BEFORE flank update so flanks detect
-        // rising edges from external input. Previously this was called AFTER
-        // updateInputFlanks(), which meant mPrev was always equal to mCurrent
-        // (since we set mCurrent every frame), so no button-press flanks were
-        // ever detected — only held-state worked.
+        // Apply remote input overlay AFTER flank update.
         //
-        // When external input is active for a controller, we OVERWRITE mCurrent
-        // completely — this means the engine's own SDL keyboard reading is
-        // ignored for that controller. This is intentional: the JS layer is the
-        // sole source of truth for input when external input is enabled.
+        // IMPORTANT: The order matters for correct flank detection:
+        //   1. updateInputPlatform() reads SDL keyboard
+        //   2. updateInputFlanks() copies mCurrent → mPrev, then sets mCurrent = hasPressedXSingle()
+        //      (hasPressedXSingle checks external input first, falling back to SDL keyboard)
+        //   3. applyExternalInputOverlay() sets mCurrent from external input
+        //
+        // This means mCurrent is FIRST set by hasPressedXSingle (via updateInputFlanks),
+        // then OVERWRITTEN by applyExternalInputOverlay. The flank detection in
+        // hasPressedXFlankSingle checks !mPrev && mCurrent — where mPrev is the OLD
+        // mCurrent (from the previous frame's overlay), and mCurrent is the NEW value
+        // (from this frame's overlay).
+        //
+        // When a button transitions from unpressed to pressed:
+        //   Frame N-1 end: mPrev=0, mCurrent=0 (button was up)
+        //   Frame N: updateInputFlanks → mPrev=0, mCurrent=hasPressedXSingle()=1
+        //            applyExternalInputOverlay → mCurrent=1
+        //            Command reader: !0 && 1 = 1 → FLANK DETECTED ✓
+        //
+        // When button is held:
+        //   Frame N+1: mPrev=1 (from frame N), mCurrent=1 → !1 && 1 = 0 → no flank ✓
         static void applyExternalInputOverlay() {
                 for (int i = 0; i < MAXIMUM_CONTROLLER_AMOUNT; i++) {
                         if (!gExternalInput.mIsActive[i]) continue;
@@ -574,8 +586,8 @@ namespace prism {
                 setProfilingSectionMarkerCurrentFunction();
                 updateInputPlatform();
                 updateInputSetting();
-                applyExternalInputOverlay(); // Apply external input BEFORE flanks
-                updateInputFlanks();          // Now flanks will detect rising/falling edges
+                updateInputFlanks();
+                applyExternalInputOverlay(); // After flanks — see comment above
         }
 
         static void setButtonFromUserInputGeneral(int i, ControllerButtonPrism tTargetButton, void(*tSettingOptionalCB)(void*), void(*tControllerWaitingCB)(void*, ControllerButtonPrism), void(*tKeyboardWaitingCB)(void*, KeyboardKeyPrism), void* tCaller, int tIsSetting, int tIsSettingController) {
