@@ -16,6 +16,7 @@ localcoord = 320, 240
 ; Fight sprite file (lifebar graphics, hit sparks, etc.)
 ; Empty = no custom fight graphics
 spr = 
+sff = fight.sff
 ; Fight sound file
 snd = 
 ; Fonts for fight text (round announcements, KO, etc.)
