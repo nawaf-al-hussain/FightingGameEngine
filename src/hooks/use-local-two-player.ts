@@ -197,7 +197,7 @@ export function useLocalTwoPlayer(
   // useCallback with empty deps so pump identity is stable
   const pump = useCallback(() => {
     const g = gameRef.current;
-    if (g && g.Module && typeof g.Module._setExternalPlayerInput === "function") {
+    if (g && g.Module && typeof g.Module.ccall === "function") {
       const p1Base = keysToMugenInput(p1KeysRef.current, P1_KEY_MAP);
       const p2Base = keysToMugenInput(p2KeysRef.current, P2_KEY_MAP);
       // Include start button as 's' in the input string (edge-triggered)
@@ -205,8 +205,12 @@ export function useLocalTwoPlayer(
       const p2Input = p2StartRef.current ? p2Base + "s" : p2Base;
 
       try {
-        g.Module._setExternalPlayerInput(0, p1Input);
-        g.Module._setExternalPlayerInput(1, p2Input);
+        // CRITICAL: use ccall, NOT _setExternalPlayerInput directly.
+        // The raw WASM export takes (i32, i32) — a string arg gets coerced
+        // to ToInt32("Fa") = 0 (NULL pointer). ccall marshals the string
+        // onto the WASM heap and passes a real pointer.
+        g.Module.ccall('setExternalPlayerInput', 'void', ['number', 'string'], [0, p1Input]);
+        g.Module.ccall('setExternalPlayerInput', 'void', ['number', 'string'], [1, p2Input]);
       } catch (e) {
         console.error("[Local2P] Failed to inject input:", e);
       }

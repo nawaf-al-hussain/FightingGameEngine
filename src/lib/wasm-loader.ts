@@ -179,8 +179,12 @@ export function injectRemoteInput(
   controllerIndex: number, // 0 = P1, 1 = P2
   inputString: string
 ): void {
-  if (game.Module._setExternalPlayerInput) {
-    game.Module._setExternalPlayerInput(controllerIndex, inputString);
+  // CRITICAL: use ccall, NOT the raw _setExternalPlayerInput export.
+  // The raw export takes (i32, i32) — a string arg gets coerced to
+  // ToInt32("Fa") = 0 (NULL pointer), silently dropping all input.
+  // ccall marshals the string onto the WASM heap and passes a real pointer.
+  if (typeof game.Module.ccall === "function") {
+    game.Module.ccall('setExternalPlayerInput', 'void', ['number', 'string'], [controllerIndex, inputString]);
   }
 }
 
@@ -189,6 +193,7 @@ export function disableRemoteInput(
   game: GameInstance,
   controllerIndex: number
 ): void {
+  // disableExternalInput takes (int) only — no string — so the raw export is safe.
   if (game.Module._disableExternalInput) {
     game.Module._disableExternalInput(controllerIndex);
   }

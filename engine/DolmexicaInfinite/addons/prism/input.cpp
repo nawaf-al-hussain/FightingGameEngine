@@ -632,6 +632,17 @@ namespace prism {
                 return hasPressedMouseRightFlankSingle(getMainController());
         }
 
+        // ---- External input accessor (used by input_win.cpp) ----
+        // Returns 1 if external input has this button pressed, 0 if not pressed,
+        // -1 if external input is NOT active for this controller.
+        // When external input is active, the engine's SDL keyboard reading
+        // should be bypassed entirely — JS is the sole source of truth.
+        int getExternalInputButtonSingle(int i, ControllerButtonPrism button) {
+                if (i < 0 || i >= MAXIMUM_CONTROLLER_AMOUNT) return -1;
+                if (!gExternalInput.mIsActive[i]) return -1;
+                return (gExternalInput.mRemoteButtons[i] >> (int)button) & 1;
+        }
+
 } // namespace prism
 
 // =============================================================================

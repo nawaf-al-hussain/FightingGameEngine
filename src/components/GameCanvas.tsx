@@ -6,6 +6,12 @@ import { loadGameEngine, type GameInstance } from "@/lib/wasm-loader";
 interface GameCanvasProps {
   /** Called once when the WASM engine has finished initializing */
   onReady?: (game: GameInstance) => void;
+  /** Player 1 character ID (directory name under chars/) — defaults to "Songoku" */
+  p1Char?: string;
+  /** Player 2 character ID (directory name under chars/) — defaults to "Vegeta" */
+  p2Char?: string;
+  /** Stage file name (relative to stages/) — defaults to "DMjmansion.def" */
+  stage?: string;
 }
 
 /**
@@ -19,7 +25,7 @@ interface GameCanvasProps {
  * SDL2 module looks for `document.getElementById('canvas')` as its default
  * rendering target. Setting Module.canvas also works; we do both for safety.
  */
-export default function GameCanvas({ onReady }: GameCanvasProps) {
+export default function GameCanvas({ onReady, p1Char = "Songoku", p2Char = "Vegeta", stage = "DMjmansion.def" }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -29,6 +35,7 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
   useEffect(() => {
     let destroyed = false;
     let gamePromise: Promise<GameInstance> | null = null;
+    let scriptEl: HTMLScriptElement | null = null;
 
     async function init() {
       try {
@@ -50,22 +57,22 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
         // mobile browsers where init takes seconds.
         gamePromise = loadGameEngine();
 
-        const script = document.createElement("script");
+        scriptEl = document.createElement("script");
         // Cache-bust: append a version hash so browsers always fetch the latest
         // game.js after a redeploy. Without this, the 1-hour Cache-Control header
         // can cause users to see a stale game.js + fresh game.data mismatch.
         const cacheBust = Date.now();
-        script.src = `/game/game.js?v=${cacheBust}`;
-        script.async = true;
+        scriptEl.src = `/game/game.js?v=${cacheBust}`;
+        scriptEl.async = true;
 
-        script.onerror = () => {
+        scriptEl.onerror = () => {
           if (!destroyed) {
             setError("Failed to load game.js — WASM build may be missing. Run: npm run build:wasm");
             setStatus("error");
           }
         };
 
-        document.head.appendChild(script);
+        document.head.appendChild(scriptEl);
 
         try {
           const game = await gamePromise;
@@ -74,7 +81,7 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
           setStatus("ready");
           // Start the engine with a direct match (bypasses text-dependent menu screens)
           try {
-            game.Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], ['Songoku', 'Vegeta', 'DMjmansion.def']);
+            game.Module.ccall('startDirectMatch', 'void', ['string', 'string', 'string'], [p1Char, p2Char, stage]);
           } catch (e) {
             console.error("[GameCanvas] _startDirectMatch() threw:", e);
           }
@@ -97,8 +104,13 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
 
     return () => {
       destroyed = true;
+      // H1 fix: remove the dynamically-injected script tag on unmount to prevent
+      // accumulation across mount/unmount cycles.
+      if (scriptEl && scriptEl.parentNode) {
+        scriptEl.parentNode.removeChild(scriptEl);
+      }
     };
-  }, [onReady]);
+  }, [onReady, p1Char, p2Char, stage]);
 
   return (
     <div ref={containerRef} className="game-container">

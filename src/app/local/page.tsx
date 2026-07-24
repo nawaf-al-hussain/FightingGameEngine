@@ -117,7 +117,7 @@ function FightScreen({ p1Char, p2Char, game, onGameReady, onExit }: FightScreenP
       </div>
 
       <div className="fight__canvas-wrap">
-        <GameCanvas onReady={onGameReady} />
+        <GameCanvas onReady={onGameReady} p1Char={p1Char.id} p2Char={p2Char.id} />
       </div>
 
       <div className="fight__controls-help">
