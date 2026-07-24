@@ -51,7 +51,11 @@ export default function GameCanvas({ onReady }: GameCanvasProps) {
         gamePromise = loadGameEngine();
 
         const script = document.createElement("script");
-        script.src = "/game/game.js";
+        // Cache-bust: append a version hash so browsers always fetch the latest
+        // game.js after a redeploy. Without this, the 1-hour Cache-Control header
+        // can cause users to see a stale game.js + fresh game.data mismatch.
+        const cacheBust = Date.now();
+        script.src = `/game/game.js?v=${cacheBust}`;
         script.async = true;
 
         script.onerror = () => {

@@ -6,6 +6,7 @@
 #include <prism/file.h>
 #include <prism/math.h>
 #include <prism/input.h>
+#include <prism/log.h>
 #include <prism/mugendefreader.h>
 #include <prism/mugenspritefilereader.h>
 #include <prism/mugenanimationreader.h>

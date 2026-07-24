@@ -102,12 +102,17 @@ export function loadGameEngine(): Promise<GameInstance> {
       ));
     }, 30000);
 
+    // Cache-bust: ensure each load gets a fresh copy of game.wasm/game.data
+    // so updates are picked up immediately rather than waiting for the
+    // 1-hour Cache-Control max-age to expire.
+    const cacheBust = Date.now();
+
     const w = window as unknown as Record<string, unknown>;
     const existingConfig = (w.Module as Record<string, unknown> | undefined) || {};
 
     w.Module = {
       ...existingConfig,
-      locateFile: (path: string) => "/game/" + path,
+      locateFile: (path: string) => `/game/${path}?v=${cacheBust}`,
       noInitialRun: true,
       onRuntimeInitialized: () => {
         clearTimeout(timeout);

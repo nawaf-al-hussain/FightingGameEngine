@@ -198,8 +198,11 @@ export function useLocalTwoPlayer(
   const pump = useCallback(() => {
     const g = gameRef.current;
     if (g && g.Module && typeof g.Module._setExternalPlayerInput === "function") {
-      const p1Input = keysToMugenInput(p1KeysRef.current, P1_KEY_MAP);
-      const p2Input = keysToMugenInput(p2KeysRef.current, P2_KEY_MAP);
+      const p1Base = keysToMugenInput(p1KeysRef.current, P1_KEY_MAP);
+      const p2Base = keysToMugenInput(p2KeysRef.current, P2_KEY_MAP);
+      // Include start button as 's' in the input string (edge-triggered)
+      const p1Input = p1StartRef.current ? p1Base + "s" : p1Base;
+      const p2Input = p2StartRef.current ? p2Base + "s" : p2Base;
 
       try {
         g.Module._setExternalPlayerInput(0, p1Input);

@@ -547,7 +547,16 @@ namespace prism {
                 }
         }
 
-        // Apply remote input overlay after normal flank update
+        // Apply remote input overlay BEFORE flank update so flanks detect
+        // rising edges from external input. Previously this was called AFTER
+        // updateInputFlanks(), which meant mPrev was always equal to mCurrent
+        // (since we set mCurrent every frame), so no button-press flanks were
+        // ever detected — only held-state worked.
+        //
+        // When external input is active for a controller, we OVERWRITE mCurrent
+        // completely — this means the engine's own SDL keyboard reading is
+        // ignored for that controller. This is intentional: the JS layer is the
+        // sole source of truth for input when external input is enabled.
         static void applyExternalInputOverlay() {
                 for (int i = 0; i < MAXIMUM_CONTROLLER_AMOUNT; i++) {
                         if (!gExternalInput.mIsActive[i]) continue;
@@ -565,8 +574,8 @@ namespace prism {
                 setProfilingSectionMarkerCurrentFunction();
                 updateInputPlatform();
                 updateInputSetting();
-                updateInputFlanks();
-                applyExternalInputOverlay(); // Remote input injection (netplay)
+                applyExternalInputOverlay(); // Apply external input BEFORE flanks
+                updateInputFlanks();          // Now flanks will detect rising/falling edges
         }
 
         static void setButtonFromUserInputGeneral(int i, ControllerButtonPrism tTargetButton, void(*tSettingOptionalCB)(void*), void(*tControllerWaitingCB)(void*, ControllerButtonPrism), void(*tKeyboardWaitingCB)(void*, KeyboardKeyPrism), void* tCaller, int tIsSetting, int tIsSettingController) {

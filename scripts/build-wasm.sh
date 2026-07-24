@@ -12,7 +12,9 @@ BUILD_DIR="$PROJECT_ROOT/build/wasm"
 OUTPUT_DIR="$PROJECT_ROOT/public/game"
 
 export EMSDK_QUIET=1
-source /home/z/emsdk/emsdk_env.sh 2>&1 || true
+# Source emsdk first (it sets EMSDK var), then prepend the tool paths
+source /tmp/emsdk/emsdk_env.sh 2>&1 || true
+export PATH="/tmp/emsdk/upstream/emscripten:/tmp/emsdk/upstream/bin:/tmp/emsdk/node/22.16.0_64bit/bin:$PATH"
 
 if ! command -v emcc &>/dev/null; then
     echo "ERROR: emcc not found."

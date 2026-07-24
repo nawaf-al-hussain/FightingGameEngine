@@ -15,10 +15,12 @@ localcoord = 320, 240
 [Files]
 ; Fight sprite file (lifebar graphics, hit sparks, etc.)
 ; Empty = no custom fight graphics
-spr = 
+spr =
 sff = fight.sff
+fightfx.sff = fightfx.sff
+fightfx.air = fightfx.air
 ; Fight sound file
-snd = 
+snd =
 ; Fonts for fight text (round announcements, KO, etc.)
 ; Fonts — disabled (TrueType crashes in WASM)
 ; font0 = font/f-4x6.def
